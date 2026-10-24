@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,7 +43,7 @@ import com.wrick.dexor.R
 import com.wrick.dexor.model.AppInfo
 import com.wrick.dexor.model.COMPILE_MODES
 import com.wrick.dexor.model.InstallSource
-import com.wrick.dexor.model.ShizukuState
+import com.wrick.dexor.model.PrivilegeState
 import com.wrick.dexor.model.SortMode
 import com.wrick.dexor.ui.theme.DexorDimensions
 import com.wrick.dexor.viewmodel.MainViewModel
@@ -58,7 +59,7 @@ fun MainScreen(
     val isSelectionMode by viewModel.isSelectionMode.collectAsState()
     val selectedApps by viewModel.selectedApps.collectAsState()
     val batchProgress by viewModel.batchProgress.collectAsState()
-    val shizukuState by viewModel.shizukuState.collectAsState()
+    val privilegeState by viewModel.privilegeState.collectAsState()
     val currentSort by viewModel.sortMode.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val snackMessage by viewModel.snackMessage.collectAsState()
@@ -103,7 +104,7 @@ fun MainScreen(
             selectedApps = selectedApps,
             detailApp = detailApp,
             isCompilingDetail = isCompilingDetail,
-            shizukuState = shizukuState,
+            privilegeState = privilegeState,
             currentSort = currentSort,
             searchQuery = searchQuery,
             userListState = userListState,
@@ -149,10 +150,11 @@ fun MainScreen(
             when (state) {
                 "SETTINGS" -> {
                     SettingsScreen(
-                        shizukuState = shizukuState,
+                        privilegeState = privilegeState,
                         onRequestPermission = { viewModel.requestShizukuPermission() },
-                        onRefreshShizuku = { viewModel.refreshShizukuState() },
-                        onBack = { viewModel.closeSettingsDialog() }
+                        onRefreshState = { viewModel.refreshPrivilegeState() },
+                        onBack = { viewModel.closeSettingsDialog() },
+                        onProbeRoot = { viewModel.probeRootChannel() }
                     )
                 }
                 "DETAIL" -> {
@@ -161,7 +163,7 @@ fun MainScreen(
                         AppDetailScreen(
                             app = appToShow,
                             isCompiling = isCompilingDetail,
-                            isShizukuReady = shizukuState == ShizukuState.READY,
+                            isShizukuReady = privilegeState.isReady(),
                             onRequestPermission = { viewModel.requestShizukuPermission() },
                             onBack = { viewModel.closeAppDetail() },
                             onCompile = { mode, force ->
@@ -179,7 +181,7 @@ fun MainScreen(
                         isLoading = isLoading,
                         isSelectionMode = isSelectionMode,
                         selectedApps = selectedApps,
-                        shizukuState = shizukuState,
+                        privilegeState = privilegeState,
                         currentSort = currentSort,
                         searchQuery = searchQuery,
                         userListState = userListState,
@@ -223,11 +225,11 @@ fun MainScreen(
 
         AlertDialog(
             onDismissRequest = { },
-            title = { Text("正在批量优化", style = MaterialTheme.typography.titleLarge) },
+            title = { Text(stringResource(R.string.batch_optimizing_title), style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
                     Text(
-                        "已完成 $current / $total",
+                        stringResource(R.string.batch_progress_completed, current, total),
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White
                     )
@@ -241,7 +243,7 @@ fun MainScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "预计剩余时间：约 $remaining 秒",
+                        stringResource(R.string.batch_estimated_remaining, remaining),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF78909C)
                     )
@@ -260,7 +262,7 @@ private fun SinglePaneList(
     isLoading: Boolean,
     isSelectionMode: Boolean,
     selectedApps: Set<String>,
-    shizukuState: ShizukuState,
+    privilegeState: PrivilegeState,
     currentSort: SortMode,
     searchQuery: String,
     userListState: LazyListState,
@@ -301,7 +303,7 @@ private fun SinglePaneList(
             TopAppBar(
                 title = {
                     if (isSelectionMode) {
-                        Text("已选择 ${selectedApps.size} 项", style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.selected_count, selectedApps.size), style = MaterialTheme.typography.titleLarge)
                     } else {
                         Text(
                             "DEXOR",
@@ -320,7 +322,7 @@ private fun SinglePaneList(
                             onClick = { viewModel.deselectAll() },
                             modifier = Modifier.size(DexorDimensions.minTouchTarget)
                         ) {
-                            Icon(Icons.Default.Close, "取消选择")
+                            Icon(Icons.Default.Close, stringResource(R.string.cancel_selection))
                         }
                     }
                 },
@@ -330,7 +332,7 @@ private fun SinglePaneList(
                             onClick = onToggleSearch,
                             modifier = Modifier.size(DexorDimensions.minTouchTarget)
                         ) {
-                            Icon(Icons.Default.Search, "搜索应用")
+                            Icon(Icons.Default.Search, stringResource(R.string.search_apps))
                         }
 
                         // 排序下拉菜单
@@ -341,7 +343,7 @@ private fun SinglePaneList(
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_sort),
-                                    contentDescription = "排序方式",
+                                    contentDescription = stringResource(R.string.sort_options),
                                     tint = Color(0xFFECEFF1),
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -355,9 +357,9 @@ private fun SinglePaneList(
                                         text = {
                                             Text(
                                                 when (mode) {
-                                                    SortMode.NAME -> "按应用名称排序"
-                                                    SortMode.DEX_STATUS -> "按编译状态排序"
-                                                    SortMode.SOURCE -> "按安装来源排序"
+                                                    SortMode.NAME -> stringResource(R.string.sort_by_name)
+                                                    SortMode.DEX_STATUS -> stringResource(R.string.sort_by_dex)
+                                                    SortMode.SOURCE -> stringResource(R.string.sort_by_source)
                                                 },
                                                 color = if (currentSort == mode) Color(0xFF90CAF9) else Color.White,
                                                 fontWeight = if (currentSort == mode) FontWeight.Bold else FontWeight.Normal
@@ -377,7 +379,7 @@ private fun SinglePaneList(
                             onClick = { viewModel.openSettingsDialog() },
                             modifier = Modifier.size(DexorDimensions.minTouchTarget)
                         ) {
-                            Icon(Icons.Default.Settings, contentDescription = "设置与关于")
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_about))
                         }
 
                         // 快速扫描与刷新
@@ -388,7 +390,7 @@ private fun SinglePaneList(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "刷新",
+                                contentDescription = stringResource(R.string.action_refresh),
                                 modifier = Modifier.graphicsLayer {
                                     rotationZ = if (isLoading) refreshRotation else 0f
                                 },
@@ -403,7 +405,7 @@ private fun SinglePaneList(
                             },
                             modifier = Modifier.defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
                         ) {
-                            Text("全选", color = Color(0xFF90CAF9), style = MaterialTheme.typography.labelLarge)
+                            Text(stringResource(R.string.select_all), color = Color(0xFF90CAF9), style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 },
@@ -431,7 +433,7 @@ private fun SinglePaneList(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
                         shape = RoundedCornerShape(DexorDimensions.cornerMedium)
                     ) {
-                        Text("批量优化 (${selectedApps.size} 个应用)", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.batch_optimize_apps, selectedApps.size), style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
@@ -459,7 +461,7 @@ private fun SinglePaneList(
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
-                        contentDescription = "回到顶部",
+                        contentDescription = stringResource(R.string.scroll_to_top),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -473,9 +475,9 @@ private fun SinglePaneList(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Shizuku 授权横幅
-            ShizukuBanner(
-                state = shizukuState,
+            // 特权通道横幅(Shizuku 优先,Root 自动回退)
+            PrivilegeBanner(
+                state = privilegeState,
                 onGrant = { viewModel.requestShizukuPermission() },
                 onRetry = { viewModel.refreshApps() }
             )
@@ -496,7 +498,7 @@ private fun SinglePaneList(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = DexorDimensions.spaceDefault, vertical = 6.dp),
-                    placeholder = { Text("搜索应用名称或包名...") },
+                    placeholder = { Text(stringResource(R.string.search_hint)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -509,7 +511,7 @@ private fun SinglePaneList(
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                Icon(Icons.Default.Close, "清除搜索", tint = Color.White)
+                                Icon(Icons.Default.Close, stringResource(R.string.action_clear), tint = Color.White)
                             }
                         }
                     }
@@ -528,8 +530,8 @@ private fun SinglePaneList(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     val tabItems = listOf(
-                        Pair("用户应用", userList.size),
-                        Pair("系统应用", sysList.size)
+                        Pair(stringResource(R.string.tab_user_apps), userList.size),
+                        Pair(stringResource(R.string.tab_system_apps), sysList.size)
                     )
 
                     tabItems.forEachIndexed { index, pair ->
@@ -595,12 +597,12 @@ private fun SinglePaneList(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = Color(0xFF90CAF9))
                             Spacer(Modifier.height(DexorDimensions.spaceMedium))
-                            Text("正在加载软件包列表...", color = Color(0xFF90A4AE), style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.loading_packages), color = Color(0xFF90A4AE), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 } else if (listForPage.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("未找到匹配的软件包", color = Color(0xFF78909C), style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.no_matching_packages), color = Color(0xFF78909C), style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
                     LazyColumn(
@@ -653,7 +655,7 @@ private fun TwoPaneLayout(
     selectedApps: Set<String>,
     detailApp: AppInfo?,
     isCompilingDetail: Boolean,
-    shizukuState: ShizukuState,
+    privilegeState: PrivilegeState,
     currentSort: SortMode,
     searchQuery: String,
     userListState: LazyListState,
@@ -676,7 +678,7 @@ private fun TwoPaneLayout(
                 isLoading = isLoading,
                 isSelectionMode = isSelectionMode,
                 selectedApps = selectedApps,
-                shizukuState = shizukuState,
+                privilegeState = privilegeState,
                 currentSort = currentSort,
                 searchQuery = searchQuery,
                 userListState = userListState,
@@ -699,16 +701,17 @@ private fun TwoPaneLayout(
         Box(modifier = Modifier.weight(1.2f).fillMaxHeight()) {
             if (showSettings) {
                 SettingsScreen(
-                    shizukuState = shizukuState,
+                    privilegeState = viewModel.privilegeState.collectAsState().value,
                     onRequestPermission = { viewModel.requestShizukuPermission() },
-                    onRefreshShizuku = { viewModel.refreshShizukuState() },
-                    onBack = onCloseSettings
+                    onRefreshState = { viewModel.refreshPrivilegeState() },
+                    onBack = onCloseSettings,
+                    onProbeRoot = { viewModel.probeRootChannel() }
                 )
             } else if (detailApp != null) {
                 AppDetailScreen(
                     app = detailApp,
                     isCompiling = isCompilingDetail,
-                    isShizukuReady = shizukuState == ShizukuState.READY,
+                    isShizukuReady = privilegeState.isReady(),
                     onRequestPermission = { viewModel.requestShizukuPermission() },
                     onBack = { viewModel.closeAppDetail() },
                     onCompile = { mode, force ->
@@ -725,7 +728,7 @@ private fun TwoPaneLayout(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            "请选择左侧应用查看 DEX 编译详情",
+                            stringResource(R.string.two_pane_placeholder),
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF78909C)
                         )
@@ -737,21 +740,21 @@ private fun TwoPaneLayout(
 }
 
 @Composable
-fun ShizukuBanner(
-    state: ShizukuState,
+fun PrivilegeBanner(
+    state: PrivilegeState,
     onGrant: () -> Unit,
     onRetry: () -> Unit
 ) {
     AnimatedVisibility(
-        visible = state != ShizukuState.READY,
+        visible = !state.isReady(),
         enter = fadeIn() + expandVertically(),
         exit = fadeOut() + shrinkVertically()
     ) {
         when (state) {
-            ShizukuState.READY -> { }
-            ShizukuState.NOT_RUNNING -> {
+            PrivilegeState.SHIZUKU_READY, PrivilegeState.ROOT_READY -> { }
+            PrivilegeState.ROOT_CHECKING -> {
                 Surface(
-                    color = Color(0xFF2D1214),
+                    color = Color(0xFF12202D),
                     shape = RoundedCornerShape(DexorDimensions.cornerMedium),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -762,22 +765,23 @@ fun ShizukuBanner(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Shizuku 未运行", color = Color(0xFFFF8A80), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.channel_checking_root), color = Color(0xFF90CAF9), style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(2.dp))
-                            Text("请启动 Shizuku 服务后点击重试", color = Color(0xFFFFCDD2), style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                stringResource(R.string.channel_checking_root_desc),
+                                color = Color(0xFFB0BEC5),
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
-                        Button(
-                            onClick = onRetry,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
-                            shape = RoundedCornerShape(DexorDimensions.cornerSmall),
-                            modifier = Modifier.defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
-                        ) {
-                            Text("重试", color = Color.White, style = MaterialTheme.typography.labelLarge)
-                        }
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color(0xFF90CAF9),
+                            strokeWidth = 2.dp
+                        )
                     }
                 }
             }
-            ShizukuState.NO_PERMISSION -> {
+            PrivilegeState.NEED_SHIZUKU_PERMISSION -> {
                 Surface(
                     color = Color(0xFF2C1E12),
                     shape = RoundedCornerShape(DexorDimensions.cornerMedium),
@@ -790,9 +794,13 @@ fun ShizukuBanner(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("需要 Shizuku 授权", color = Color(0xFFFFB74D), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.need_shizuku_auth), color = Color(0xFFFFB74D), style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(2.dp))
-                            Text("点击授权以启用 ART 编译与状态检测功能", color = Color(0xFFFFE0B2), style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                stringResource(R.string.need_shizuku_auth_desc),
+                                color = Color(0xFFFFE0B2),
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                         Button(
                             onClick = onGrant,
@@ -800,7 +808,39 @@ fun ShizukuBanner(
                             shape = RoundedCornerShape(DexorDimensions.cornerSmall),
                             modifier = Modifier.defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
                         ) {
-                            Text("授权", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                            Text(stringResource(R.string.action_grant), color = Color.White, style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                }
+            }
+            PrivilegeState.NO_CHANNEL -> {
+                Surface(
+                    color = Color(0xFF2D1214),
+                    shape = RoundedCornerShape(DexorDimensions.cornerMedium),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = DexorDimensions.spaceDefault, vertical = 6.dp)
+                ) {
+                    Row(
+                        Modifier.padding(DexorDimensions.spaceMedium),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.no_channel), color = Color(0xFFFF8A80), style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                stringResource(R.string.no_channel_desc),
+                                color = Color(0xFFFFCDD2),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Button(
+                            onClick = onRetry,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
+                            shape = RoundedCornerShape(DexorDimensions.cornerSmall),
+                            modifier = Modifier.defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
+                        ) {
+                            Text(stringResource(R.string.action_retry), color = Color.White, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }

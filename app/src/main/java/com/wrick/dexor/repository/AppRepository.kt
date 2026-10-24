@@ -4,12 +4,13 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import com.wrick.dexor.R
 import com.wrick.dexor.db.AppDao
 import com.wrick.dexor.db.AppEntity
 import com.wrick.dexor.model.AppInfo
 import com.wrick.dexor.model.InstallSource
 import com.wrick.dexor.shizuku.DexManager
-import com.wrick.dexor.shizuku.ShizukuHelper
+import com.wrick.dexor.shell.ShellRouter
 import com.wrick.dexor.ui.util.AppIconManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +38,7 @@ class AppRepository(
         val packagesDeferred = async { pm.getInstalledPackages(0) }
         val savedEntitiesDeferred = async { appDao.getAllApps().associateBy { it.packageName } }
         val dexoptMapDeferred = async {
-            if (ShizukuHelper.isShizukuAvailable() && ShizukuHelper.hasPermission()) {
+            if (ShellRouter.anyReady()) {
                 DexManager.getAllDexoptStates()
             } else {
                 emptyMap()
@@ -252,7 +253,10 @@ class AppRepository(
             }
             Result.success(Unit)
         } else {
-            Result.failure(result.exceptionOrNull() ?: Exception("优化 $packageName 失败，请检查 Shizuku 权限。"))
+            Result.failure(
+                result.exceptionOrNull()
+                    ?: Exception(context.getString(R.string.msg_compile_failed, packageName))
+            )
         }
     }
 }

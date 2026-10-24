@@ -9,7 +9,8 @@
 <p align="center">
   <a href="https://github.com/DeveshTone/Dexor/releases"><img src="https://img.shields.io/badge/Release-v1.0.0-blue?style=flat-square" alt="Release" /></a>
   <a href="https://developer.android.com"><img src="https://img.shields.io/badge/Android-9.0%20--%2015%20(API%2028--35)-brightgreen?style=flat-square" alt="Android Support" /></a>
-  <a href="https://github.com/RikkaApps/Shizuku"><img src="https://img.shields.io/badge/Shizuku-API%2013.1+-orange?style=flat-square" alt="Shizuku Required" /></a>
+  <a href="https://github.com/RikkaApps/Shizuku"><img src="https://img.shields.io/badge/Shizuku-API%2013.1+-orange?style=flat-square" alt="Shizuku Optional" /></a>
+  <img src="https://img.shields.io/badge/Root-Direct%20Channel-success?style=flat-square" alt="Root Supported" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License" /></a>
   <img src="https://img.shields.io/badge/APK%20Size-3.16%20MB-purple?style=flat-square" alt="APK Size" />
   <img src="https://img.shields.io/badge/Privacy-100%25%20Offline%20(Zero%20Internet)-success?style=flat-square" alt="100% Offline" />
@@ -19,9 +20,12 @@
 
 ## What is Dexor?
 
-**Dexor** is a modern, non-root Android utility that puts you in control of how your applications are compiled and executed by the **Android Runtime (ART)**.
+**Dexor** is a modern Android utility that puts you in control of how your applications are compiled and executed by the **Android Runtime (ART)**.
 
-By leveraging [Shizuku](https://github.com/RikkaApps/Shizuku) to interface safely with Android's internal compilation service (`cmd package compile`), Dexor lets you trigger on-demand and batch Ahead-Of-Time (AOT) compilation without requiring root access.
+Dexor talks to Android's internal compilation service (`cmd package compile`) through one of two privilege channels, picked automatically:
+
+- **Root Direct Channel** — on rooted devices (Magisk, KernelSU, etc.) Dexor runs every command through a one-shot `su` session all by itself. No other app is needed, no persistent root shell is kept, and the app process itself never elevates.
+- **Shizuku** — when a [Shizuku](https://github.com/RikkaApps/Shizuku) server is running and authorized, it is preferred (it usually runs at the unprivileged shell UID) and the Root channel becomes the automatic fallback.
 
 ### How it Works (Why You Need It)
 
@@ -45,9 +49,11 @@ When Android apps are installed or updated, they consist of Dalvik Executable (D
 ## Key Features
 
 - **Elevated AOT Compilation Without Root:** Utilizes Shizuku IPC to safely execute native `cmd package compile` commands without modifying system partitions.
+- **Self-Contained Root Direct Channel:** On rooted devices, Dexor needs nothing else — every privileged command runs through a one-shot `su` child process (hardened with timeouts, merged-output draining, and package-name whitelisting). No companion app, no resident root shell, and the app process stays at its normal UID.
 - **Deep Dexopt State Inspection:** Inspect real-time compiler filters (`speed`, `space`, `verify`, `everything`), compilation trigger reasons (`cmdline`, `install`, `bg-dexopt`), and APK path details for every installed package.
 - **Batch Optimization Pipeline:** Select multiple apps across user and system categories to compile sequentially, featuring live progress indicators and estimated time calculations.
 - **Instant Search & Multi-Criteria Filtering:** Filter between User and System apps, and sort instantly by App Name, DEX Status, or Package Source.
+- **Bilingual UI (中文 / English):** Follows the system language automatically and can be switched manually at runtime in Settings (per-app locales, persisted across restarts).
 - **100% Offline & Private:** `android.permission.INTERNET` is completely absent from the manifest. Dexor does not collect telemetry, track usage, or display advertisements.
 - **Lightweight & High Performance:** Built with Jetpack Compose, an asynchronous coroutine pipeline, in-memory Room caching, and compressed to just **3.16 MB** with R8 full minification.
 
@@ -71,10 +77,10 @@ Dexor exposes Android's native compilation filters so you can balance runtime ex
 ## Requirements
 
 - **Android Version:** Android 9.0 to Android 15 (API 28 – 35)
-- **Privilege Manager:** [Shizuku](https://github.com/RikkaApps/Shizuku) (v13.1.5 or newer) running via Wireless Debugging, ADB, or Root
+- **Privilege:** **either** a rooted device (Magisk / KernelSU / APatch) — Dexor then works standalone — **or** [Shizuku](https://github.com/RikkaApps/Shizuku) (v13.1.5 or newer) running via Wireless Debugging or ADB
 
 > [!NOTE]
-> Shizuku is required to grant Dexor the elevated permissions needed to trigger package compilation. If Shizuku is inactive, Dexor operates in a read-only inspection mode. Visit the [Shizuku Setup Guide](https://shizuku.rikka.app/guide/setup/) for setup instructions.
+> Dexor picks the privilege channel automatically: an authorized Shizuku server is preferred (it typically runs at the unprivileged shell UID), and the Root direct channel is the fallback when Shizuku is absent. Without either, Dexor operates in a read-only inspection mode. Your root manager still shows its usual grant dialog the first time a `su` call is made.
 
 ---
 

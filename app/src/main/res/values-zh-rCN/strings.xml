@@ -1,4 +1,162 @@
 <resources>
     <string name="app_name">Dexor</string>
     <string name="app_subtitle">统一 DEX2OAT 管理器</string>
+
+    <!-- Common actions -->
+    <string name="action_cancel">取消</string>
+    <string name="action_retry">重试</string>
+    <string name="action_grant">授权</string>
+    <string name="action_back">返回</string>
+    <string name="action_refresh">刷新</string>
+    <string name="action_clear">清除</string>
+
+    <!-- Main list screen -->
+    <string name="selected_count">已选择 %1$d 项</string>
+    <string name="cancel_selection">取消选择</string>
+    <string name="search_apps">搜索应用</string>
+    <string name="sort_options">排序方式</string>
+    <string name="sort_by_name">按应用名称排序</string>
+    <string name="sort_by_dex">按编译状态排序</string>
+    <string name="sort_by_source">按安装来源排序</string>
+    <string name="settings_about">设置与关于</string>
+    <string name="select_all">全选</string>
+    <string name="batch_optimize_apps">批量优化 (%1$d 个应用)</string>
+    <string name="scroll_to_top">回到顶部</string>
+    <string name="search_hint">搜索应用名称或包名…</string>
+    <string name="tab_user_apps">用户应用</string>
+    <string name="tab_system_apps">系统应用</string>
+    <string name="loading_packages">正在加载软件包列表…</string>
+    <string name="no_matching_packages">未找到匹配的软件包</string>
+    <string name="two_pane_placeholder">请选择左侧应用查看 DEX 编译详情</string>
+
+    <!-- Batch progress -->
+    <string name="batch_optimizing_title">正在批量优化</string>
+    <string name="batch_progress_completed">已完成 %1$d / %2$d</string>
+    <string name="batch_estimated_remaining">预计剩余时间：约 %1$d 秒</string>
+
+    <!-- Privilege channel banner -->
+    <string name="channel_checking_root">正在检测 Root 通道</string>
+    <string name="channel_checking_root_desc">Shizuku 未运行，正在探测本机 Root 直连通道…</string>
+    <string name="need_shizuku_auth">需要 Shizuku 授权</string>
+    <string name="need_shizuku_auth_desc">点击授权以启用 ART 编译与状态检测功能</string>
+    <string name="no_channel">无可用特权通道</string>
+    <string name="no_channel_desc">Shizuku 未运行且 Root 不可用，当前为只读模式。可启动并授权 Shizuku，或在已 Root 设备上于设置页检测 Root 直连通道</string>
+
+    <!-- Compilation bottom sheet -->
+    <string name="optimize_app">优化应用：%1$s</string>
+    <string name="batch_optimization_count">批量优化 (%1$d 个应用)</string>
+    <string name="force_recompile">强制重新编译 (-f)</string>
+    <string name="force_recompile_desc">即使已有编译产物，也强制重新执行选定模式</string>
+    <string name="per_app_seconds">单应用约 %1$d 秒</string>
+    <string name="estimated_total">预计总耗时：约 %1$s (%2$d 个软件包)</string>
+    <string name="duration_min_sec">%1$d 分 %2$d 秒</string>
+    <string name="duration_sec">%1$d 秒</string>
+
+    <!-- Compile modes -->
+    <string name="mode_speed_profile_label">Speed Profile</string>
+    <string name="mode_speed_profile_desc">根据可用 Profile 编译热点代码；没有 Profile 时可能采用 Verify</string>
+    <string name="mode_speed_label">Speed</string>
+    <string name="mode_speed_desc">不依赖 Profile，将所有方法编译为机器码，以执行速度为目标</string>
+    <string name="mode_everything_label">Everything</string>
+    <string name="mode_everything_desc">更广泛地编译代码，解析全部类引用，可能增加耗时和存储占用</string>
+    <string name="mode_space_label">Space</string>
+    <string name="mode_space_desc">仅编译核心初始化方法，兼顾稳定启动与最小存储占用</string>
+    <string name="mode_verify_label">Verify</string>
+    <string name="mode_verify_desc">仅验证 DEX 结构，清除所有原生代码，释放最大存储空间</string>
+    <string name="mode_reset_label">清除</string>
+    <string name="mode_reset_desc">重置编译状态，清除本地 Profile 和编译产物</string>
+
+    <!-- Dexopt reasons -->
+    <string name="reason_cmdline">手动优化</string>
+    <string name="reason_install">应用安装</string>
+    <string name="reason_bg_dexopt">后台维护</string>
+    <string name="reason_first_boot">首次开机</string>
+    <string name="reason_boot_after_ota">系统升级</string>
+    <string name="reason_inactive">闲置回收</string>
+    <string name="reason_reset">已重置</string>
+    <string name="reason_unknown">未知</string>
+
+    <!-- App list item -->
+    <string name="source_system">系统</string>
+    <string name="source_play">Play</string>
+    <string name="source_user">用户</string>
+
+    <!-- App detail screen -->
+    <string name="select_compiler_filter">选择编译模式</string>
+    <string name="select_mode_for">为 %1$s 选择 ART 编译模式</string>
+    <string name="selected_filter">已选模式</string>
+    <string name="change_filter">更改模式</string>
+    <string name="resetting">正在清除…</string>
+    <string name="optimizing">正在优化…</string>
+    <string name="grant_permission">授予权限</string>
+    <string name="apply_mode">开始优化</string>
+    <string name="reset_now">开始清除</string>
+    <string name="system_app">系统应用</string>
+    <string name="user_app">用户应用</string>
+    <string name="metric_dex_filter">编译模式</string>
+    <string name="metric_reason">优化原因</string>
+    <string name="force_compile">强制编译</string>
+    <string name="force_compile_desc">即使已有编译产物，也重新执行所选编译模式</string>
+    <string name="package_info_title">安装包信息与文件路径</string>
+    <string name="spec_version">应用版本</string>
+    <string name="spec_sdk">目标 / 最低 SDK</string>
+    <string name="spec_last_updated">最后更新时间</string>
+    <string name="spec_last_compiled">最后编译时间</string>
+    <string name="spec_status_changed">状态变更时间</string>
+    <string name="spec_apk_path">APK 文件路径</string>
+    <string name="spec_data_dir">私有数据目录</string>
+    <string name="unknown">未知</string>
+
+    <!-- Settings screen -->
+    <string name="privilege_section">特权通道状态</string>
+    <string name="privacy_section">隐私与安全性</string>
+    <string name="about_section">关于与致谢</string>
+    <string name="badge_offline">100% 离线隐私</string>
+    <string name="badge_open_source">开源免费</string>
+    <string name="dexor_icon">Dexor 图标</string>
+    <string name="privilege_channel">特权通道</string>
+    <string name="status_shizuku_ready">Shizuku 已就绪</string>
+    <string name="status_shizuku_ready_desc">Dexor 已成功连接至 Shizuku，具有执行原生 ART 编译命令的提权能力。</string>
+    <string name="status_root_ready">Root 通道已就绪</string>
+    <string name="status_root_ready_desc">已通过 Root 直连模式获得特权执行能力，无需安装或启动 Shizuku。若之后启动并授权 Shizuku，Dexor 将自动切换回权限更小的 Shizuku 通道。</string>
+    <string name="status_checking">检测中</string>
+    <string name="status_checking_desc">Shizuku 未运行，正在探测本机 Root 直连通道…</string>
+    <string name="status_need_permission">需要授权</string>
+    <string name="status_need_permission_desc">Shizuku 服务正在运行，但尚未向 Dexor 授予权限。请点击下方按钮完成授权以开启 DEX 编译。</string>
+    <string name="status_no_channel">无特权通道</string>
+    <string name="status_no_channel_desc">Shizuku 未运行且 Root 不可用，当前为只读模式。可通过无线调试 (ADB) 启动 Shizuku，或在已 Root 设备上检测 Root 直连通道。</string>
+    <string name="grant_shizuku_permission">授予 Shizuku 权限</string>
+    <string name="need_help_guide">需要帮助？查看官方设置指南</string>
+    <string name="detect_root_channel">检测 Root 直连通道</string>
+    <string name="setup_guide">Shizuku 指南</string>
+    <string name="recheck">刷新状态</string>
+    <string name="probing_root">正在探测 Root 通道…</string>
+    <string name="privacy_title">100% 离线 &amp; 隐私安全</string>
+    <string name="privacy_desc">Dexor 不申请任何网络权限（Manifest 完全未声明 android.permission.INTERNET）。应用不包含任何埋点、统计、追踪分析或崩溃日志上报 SDK，所有操作与数据仅在本地执行与保留。</string>
+    <string name="system_safety_title">系统安全性保障</string>
+    <string name="system_safety_desc">所有编译操作均通过特权通道（Shizuku 或 Root 直连）调用 Android 原生包管理命令（cmd package compile）。Dexor 不会修改只读系统分区，不触碰任何系统安全配置，不影响设备官方完整性。</string>
+    <string name="developer">开发者</string>
+    <string name="license">开源协议</string>
+    <string name="third_party">第三方开源组件</string>
+    <string name="github_repo">项目主页</string>
+    <string name="releases">版本发布</string>
+
+    <!-- Language settings -->
+    <string name="language_section">语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_zh">简体中文</string>
+    <string name="language_en">English</string>
+
+    <!-- ViewModel messages -->
+    <string name="msg_load_failed">加载应用失败: %1$s</string>
+    <string name="msg_refreshed">已刷新 %1$d 个软件包</string>
+    <string name="msg_refresh_failed">刷新失败: %1$s</string>
+    <string name="msg_need_channel">需要特权通道(Shizuku 或 Root)才能执行优化操作</string>
+    <string name="msg_resetting_pkg">正在重置 %1$s…</string>
+    <string name="msg_optimizing_pkg">正在优化 %1$s (%2$s)…</string>
+    <string name="msg_reset_done">%1$s 已清除并重置编译状态</string>
+    <string name="msg_optimize_done">%1$s 优化完成 (%2$s)</string>
+    <string name="msg_operation_failed">操作失败: %1$s</string>
+    <string name="msg_batch_done">批量处理完成：%1$d 个成功，%2$d 失败</string>
+    <string name="msg_compile_failed">优化 %1$s 失败，请检查特权通道权限。</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.wrick.dexor.model
 
 import androidx.compose.runtime.Immutable
+import com.wrick.dexor.R
 
 enum class InstallSource {
     SYSTEM, GOOGLE_PLAY, USER
@@ -20,10 +21,24 @@ enum class ShizukuState {
     READY
 }
 
+/**
+ * 特权通道统一状态:Shizuku 优先,Root 直连自动回退。
+ * ROOT_READY 下完全无需安装/启动 Shizuku。
+ */
+enum class PrivilegeState {
+    SHIZUKU_READY,           // Shizuku 在线且已授权
+    ROOT_READY,              // Root 直连通道可用(自动回退)
+    ROOT_CHECKING,           // 正在探测 Root 通道
+    NEED_SHIZUKU_PERMISSION, // Shizuku 在线但未授权,且 Root 不可用
+    NO_CHANNEL;              // 无任何特权通道(只读模式)
+
+    fun isReady(): Boolean = this == SHIZUKU_READY || this == ROOT_READY
+}
+
 data class CompileMode(
     val id: String,
-    val label: String,
-    val description: String,
+    val labelRes: Int,
+    val descriptionRes: Int,
     val estimatedSecondsPerApp: Int,
     val isReset: Boolean = false
 )
@@ -31,53 +46,54 @@ data class CompileMode(
 val COMPILE_MODES = listOf(
     CompileMode(
         id = "speed-profile",
-        label = "Speed Profile",
-        description = "根据可用 Profile 编译热点代码；没有 Profile 时可能采用 Verify",
+        labelRes = R.string.mode_speed_profile_label,
+        descriptionRes = R.string.mode_speed_profile_desc,
         estimatedSecondsPerApp = 15
     ),
     CompileMode(
         id = "speed",
-        label = "Speed",
-        description = "不依赖 Profile，将所有方法编译为机器码，以执行速度为目标",
+        labelRes = R.string.mode_speed_label,
+        descriptionRes = R.string.mode_speed_desc,
         estimatedSecondsPerApp = 30
     ),
     CompileMode(
         id = "everything",
-        label = "Everything",
-        description = "更广泛地编译代码，解析全部类引用，可能增加耗时和存储占用",
+        labelRes = R.string.mode_everything_label,
+        descriptionRes = R.string.mode_everything_desc,
         estimatedSecondsPerApp = 60
     ),
     CompileMode(
         id = "space",
-        label = "Space",
-        description = "仅编译核心初始化方法，兼顾稳定启动与最小存储占用",
+        labelRes = R.string.mode_space_label,
+        descriptionRes = R.string.mode_space_desc,
         estimatedSecondsPerApp = 15
     ),
     CompileMode(
         id = "verify",
-        label = "Verify",
-        description = "仅验证 DEX 结构，清除所有原生代码，释放最大存储空间",
+        labelRes = R.string.mode_verify_label,
+        descriptionRes = R.string.mode_verify_desc,
         estimatedSecondsPerApp = 5
     ),
     CompileMode(
         id = "reset",
-        label = "清除",
-        description = "重置编译状态，清除本地 Profile 和编译产物",
+        labelRes = R.string.mode_reset_label,
+        descriptionRes = R.string.mode_reset_desc,
         estimatedSecondsPerApp = 3,
         isReset = true
     )
 )
 
-fun getDexReasonDisplay(reason: String): String = when (reason.lowercase()) {
-    "cmdline" -> "手动优化"
-    "install" -> "应用安装"
-    "bg-dexopt" -> "后台维护"
-    "first-boot" -> "首次开机"
-    "boot-after-ota" -> "系统升级"
-    "inactive" -> "闲置回收"
-    "reset" -> "已重置"
-    "unknown" -> "未知"
-    else -> reason
+/** 返回 dexopt 触发原因的本地化文案资源 ID,由调用方经 stringResource 解析 */
+fun getDexReasonRes(reason: String): Int = when (reason.lowercase()) {
+    "cmdline" -> R.string.reason_cmdline
+    "install" -> R.string.reason_install
+    "bg-dexopt" -> R.string.reason_bg_dexopt
+    "first-boot" -> R.string.reason_first_boot
+    "boot-after-ota" -> R.string.reason_boot_after_ota
+    "inactive" -> R.string.reason_inactive
+    "reset" -> R.string.reason_reset
+    "unknown" -> R.string.reason_unknown
+    else -> 0
 }
 
 @Immutable

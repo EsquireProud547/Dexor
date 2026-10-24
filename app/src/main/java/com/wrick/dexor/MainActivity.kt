@@ -4,10 +4,10 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,26 +22,26 @@ import com.wrick.dexor.ui.theme.createDexorTypography
 import com.wrick.dexor.viewmodel.MainViewModel
 import rikka.shizuku.Shizuku
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val vm: MainViewModel by viewModels()
 
     private val onBinderReceived = Shizuku.OnBinderReceivedListener {
-        vm.refreshShizukuState()
+        vm.refreshPrivilegeState()
         vm.loadApps(forceRefresh = false)
     }
 
     private val onBinderDead = Shizuku.OnBinderDeadListener {
-        vm.refreshShizukuState()
+        vm.refreshPrivilegeState()
     }
 
     private val onPermissionResult = Shizuku.OnRequestPermissionResultListener { _, grantResult ->
         if (grantResult == PackageManager.PERMISSION_GRANTED) {
-            vm.refreshShizukuState()
+            vm.refreshPrivilegeState()
             vm.refreshApps()
         } else {
             Toast.makeText(this, "Shizuku permission denied", Toast.LENGTH_SHORT).show()
-            vm.refreshShizukuState()
+            vm.refreshPrivilegeState()
         }
     }
 

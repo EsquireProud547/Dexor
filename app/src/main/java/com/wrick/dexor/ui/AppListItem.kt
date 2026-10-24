@@ -15,13 +15,14 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.wrick.dexor.R
 import com.wrick.dexor.model.AppInfo
 import com.wrick.dexor.model.InstallSource
-import com.wrick.dexor.model.getDexReasonDisplay
+import com.wrick.dexor.model.getDexReasonRes
 import com.wrick.dexor.ui.theme.DexorCodeFont
 import com.wrick.dexor.ui.theme.DexorDimensions
 import com.wrick.dexor.ui.util.AppIconKey
@@ -108,7 +109,11 @@ fun AppListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatusChip(text = app.dexStatus, color = statusColor(app.dexStatus))
-                StatusChip(text = getDexReasonDisplay(app.dexReason), color = Color(0xFF263238))
+                val reasonRes = getDexReasonRes(app.dexReason)
+                StatusChip(
+                    text = if (reasonRes != 0) stringResource(reasonRes) else app.dexReason,
+                    color = Color(0xFF263238)
+                )
                 if (app.source == InstallSource.GOOGLE_PLAY) {
                     Box(
                         modifier = Modifier
@@ -159,10 +164,11 @@ private fun statusColor(status: String): Color = when (status.lowercase()) {
     else -> Color(0xFF455A64)
 }
 
-private fun sourceLabel(s: InstallSource) = when (s) {
-    InstallSource.SYSTEM -> "系统"
-    InstallSource.GOOGLE_PLAY -> "Play"
-    InstallSource.USER -> "用户"
+@Composable
+private fun sourceLabel(s: InstallSource): String = when (s) {
+    InstallSource.SYSTEM -> stringResource(R.string.source_system)
+    InstallSource.GOOGLE_PLAY -> stringResource(R.string.source_play)
+    InstallSource.USER -> stringResource(R.string.source_user)
 }
 
 private fun sourceColor(s: InstallSource) = when (s) {

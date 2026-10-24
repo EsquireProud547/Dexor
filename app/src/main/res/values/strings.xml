@@ -1,4 +1,162 @@
 <resources>
     <string name="app_name">Dexor</string>
     <string name="app_subtitle">Unified DEX2OAT Manager</string>
+
+    <!-- Common actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_grant">Grant</string>
+    <string name="action_back">Back</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_clear">Clear</string>
+
+    <!-- Main list screen -->
+    <string name="selected_count">%1$d Selected</string>
+    <string name="cancel_selection">Cancel</string>
+    <string name="search_apps">Search</string>
+    <string name="sort_options">Sort Options</string>
+    <string name="sort_by_name">Sort by Name</string>
+    <string name="sort_by_dex">Sort by DEX Status</string>
+    <string name="sort_by_source">Sort by Source</string>
+    <string name="settings_about">Settings &amp; About</string>
+    <string name="select_all">Select All</string>
+    <string name="batch_optimize_apps">Batch Optimize (%1$d apps)</string>
+    <string name="scroll_to_top">Scroll to top</string>
+    <string name="search_hint">Search by name or package…</string>
+    <string name="tab_user_apps">User Apps</string>
+    <string name="tab_system_apps">System Apps</string>
+    <string name="loading_packages">Loading packages…</string>
+    <string name="no_matching_packages">No matching packages found</string>
+    <string name="two_pane_placeholder">Select an application to view DEX optimization details</string>
+
+    <!-- Batch progress -->
+    <string name="batch_optimizing_title">Batch Optimization in Progress</string>
+    <string name="batch_progress_completed">%1$d of %2$d completed</string>
+    <string name="batch_estimated_remaining">Estimated remaining: ~%1$ds</string>
+
+    <!-- Privilege channel banner -->
+    <string name="channel_checking_root">Checking Root Channel</string>
+    <string name="channel_checking_root_desc">Shizuku is not running; probing the on-device Root direct channel…</string>
+    <string name="need_shizuku_auth">Shizuku Authorization Needed</string>
+    <string name="need_shizuku_auth_desc">Tap Grant to enable ART compilation &amp; status inspection</string>
+    <string name="no_channel">No Privilege Channel</string>
+    <string name="no_channel_desc">Shizuku is not running and Root is unavailable — read-only mode. Start and authorize Shizuku, or detect the Root channel in Settings on a rooted device.</string>
+
+    <!-- Compilation bottom sheet -->
+    <string name="optimize_app">Compile: %1$s</string>
+    <string name="batch_optimization_count">Batch Optimization (%1$d apps)</string>
+    <string name="force_recompile">Force Recompile (-f)</string>
+    <string name="force_recompile_desc">Re-run the selected mode even if compiled artifacts already exist</string>
+    <string name="per_app_seconds">~%1$ds per app</string>
+    <string name="estimated_total">Estimated total: %1$s (%2$d packages)</string>
+    <string name="duration_min_sec">%1$d min %2$d s</string>
+    <string name="duration_sec">%1$d s</string>
+
+    <!-- Compile modes -->
+    <string name="mode_speed_profile_label">Speed Profile</string>
+    <string name="mode_speed_profile_desc">Compiles hot code from available runtime profiles; falls back to verify without profiles</string>
+    <string name="mode_speed_label">Speed</string>
+    <string name="mode_speed_desc">Force-compiles all methods into native machine code without relying on profiles, maximizing runtime smoothness</string>
+    <string name="mode_everything_label">Everything</string>
+    <string name="mode_everything_desc">Compiles all code and resolves all class references; may take longer and use more storage</string>
+    <string name="mode_space_label">Space</string>
+    <string name="mode_space_desc">Compiles only core initialization methods, balancing stable boot with minimal storage</string>
+    <string name="mode_verify_label">Verify</string>
+    <string name="mode_verify_desc">Only verifies DEX structure and clears all native code, freeing maximum storage space</string>
+    <string name="mode_reset_label">Reset</string>
+    <string name="mode_reset_desc">Resets compilation state and clears local profiles and compiled artifacts</string>
+
+    <!-- Dexopt reasons -->
+    <string name="reason_cmdline">Manual</string>
+    <string name="reason_install">Install</string>
+    <string name="reason_bg_dexopt">Background</string>
+    <string name="reason_first_boot">First boot</string>
+    <string name="reason_boot_after_ota">After OTA</string>
+    <string name="reason_inactive">Inactive</string>
+    <string name="reason_reset">Reset</string>
+    <string name="reason_unknown">Unknown</string>
+
+    <!-- App list item -->
+    <string name="source_system">SYS</string>
+    <string name="source_play">PLAY</string>
+    <string name="source_user">USER</string>
+
+    <!-- App detail screen -->
+    <string name="select_compiler_filter">Select Compiler Filter</string>
+    <string name="select_mode_for">Choose an ART compilation mode for %1$s</string>
+    <string name="selected_filter">Selected Filter</string>
+    <string name="change_filter">Change Filter</string>
+    <string name="resetting">Resetting…</string>
+    <string name="optimizing">Optimizing…</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="apply_mode">Apply Mode</string>
+    <string name="reset_now">Reset Now</string>
+    <string name="system_app">System App</string>
+    <string name="user_app">User App</string>
+    <string name="metric_dex_filter">DEX FILTER</string>
+    <string name="metric_reason">TRIGGER REASON</string>
+    <string name="force_compile">Force Compile</string>
+    <string name="force_compile_desc">Re-run the selected compilation mode even if artifacts already exist</string>
+    <string name="package_info_title">Package Information &amp; File Paths</string>
+    <string name="spec_version">Version</string>
+    <string name="spec_sdk">Target / Min SDK</string>
+    <string name="spec_last_updated">Last Updated</string>
+    <string name="spec_last_compiled">Last Compiled</string>
+    <string name="spec_status_changed">Status Changed</string>
+    <string name="spec_apk_path">APK Source Path</string>
+    <string name="spec_data_dir">Private Data Dir</string>
+    <string name="unknown">Unknown</string>
+
+    <!-- Settings screen -->
+    <string name="privilege_section">PRIVILEGE CHANNEL</string>
+    <string name="privacy_section">PRIVACY &amp; SECURITY</string>
+    <string name="about_section">ABOUT &amp; CREDITS</string>
+    <string name="badge_offline">100% Offline</string>
+    <string name="badge_open_source">Open Source</string>
+    <string name="dexor_icon">Dexor Icon</string>
+    <string name="privilege_channel">Privilege Channel</string>
+    <string name="status_shizuku_ready">Authorized &amp; Ready</string>
+    <string name="status_shizuku_ready_desc">Dexor is connected to Shizuku with elevated shell execution privileges. Native compilation commands are ready.</string>
+    <string name="status_root_ready">Root Channel Ready</string>
+    <string name="status_root_ready_desc">Privileged execution is available through the Root direct channel — Shizuku is not required. If Shizuku is later started and authorized, Dexor will automatically switch back to the lower-privilege Shizuku channel.</string>
+    <string name="status_checking">Checking</string>
+    <string name="status_checking_desc">Shizuku is not running; probing the on-device Root direct channel…</string>
+    <string name="status_need_permission">Permission Required</string>
+    <string name="status_need_permission_desc">Shizuku service is active, but Dexor has not yet been granted permission. Grant permission to enable dexopt compilation.</string>
+    <string name="status_no_channel">No Privilege Channel</string>
+    <string name="status_no_channel_desc">Shizuku is not running and Root is unavailable — read-only mode. Start Shizuku via Wireless Debugging (ADB), or detect the Root direct channel on a rooted device.</string>
+    <string name="grant_shizuku_permission">Grant Shizuku Permission</string>
+    <string name="need_help_guide">Need help? View official setup guide</string>
+    <string name="detect_root_channel">Detect Root Channel</string>
+    <string name="setup_guide">Setup Guide</string>
+    <string name="recheck">Recheck</string>
+    <string name="probing_root">Probing Root channel…</string>
+    <string name="privacy_title">100% Offline &amp; Private</string>
+    <string name="privacy_desc">Dexor requests zero Internet permissions (android.permission.INTERNET is absent from the manifest). The application contains zero telemetry, analytics, tracking, or crash loggers. All operations remain entirely on your device.</string>
+    <string name="system_safety_title">System Safety Assurance</string>
+    <string name="system_safety_desc">All compilation operations execute standard Android platform commands (cmd package compile) through the active privilege channel (Shizuku or Root direct). Dexor does not alter read-only system partitions or modify device security configurations.</string>
+    <string name="developer">Developer</string>
+    <string name="license">License</string>
+    <string name="third_party">Third-Party Libraries</string>
+    <string name="github_repo">GitHub Repo</string>
+    <string name="releases">Releases</string>
+
+    <!-- Language settings -->
+    <string name="language_section">LANGUAGE</string>
+    <string name="language_system">Follow System</string>
+    <string name="language_zh">简体中文</string>
+    <string name="language_en">English</string>
+
+    <!-- ViewModel messages -->
+    <string name="msg_load_failed">Error loading apps: %1$s</string>
+    <string name="msg_refreshed">Refreshed %1$d packages</string>
+    <string name="msg_refresh_failed">Refresh failed: %1$s</string>
+    <string name="msg_need_channel">A privilege channel (Shizuku or Root) is required to optimize</string>
+    <string name="msg_resetting_pkg">Resetting %1$s…</string>
+    <string name="msg_optimizing_pkg">Optimizing %1$s (%2$s)…</string>
+    <string name="msg_reset_done">%1$s cleared and reset</string>
+    <string name="msg_optimize_done">%1$s optimized (%2$s)</string>
+    <string name="msg_operation_failed">Failed: %1$s</string>
+    <string name="msg_batch_done">Batch complete: %1$d optimized, %2$d failed</string>
+    <string name="msg_compile_failed">Failed to optimize %1$s. Check Shizuku/Root permission.</string>
 </resources>

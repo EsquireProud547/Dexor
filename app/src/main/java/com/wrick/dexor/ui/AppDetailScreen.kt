@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,7 +32,7 @@ import com.wrick.dexor.R
 import com.wrick.dexor.model.AppInfo
 import com.wrick.dexor.model.COMPILE_MODES
 import com.wrick.dexor.model.InstallSource
-import com.wrick.dexor.model.getDexReasonDisplay
+import com.wrick.dexor.model.getDexReasonRes
 import com.wrick.dexor.ui.theme.DexorCodeFont
 import com.wrick.dexor.ui.theme.DexorDimensions
 import com.wrick.dexor.ui.util.AppIconImageLoader
@@ -88,13 +89,13 @@ fun AppDetailScreen(
                         .padding(horizontal = 20.dp, vertical = 24.dp)
                 ) {
                     Text(
-                        "选择编译模式",
+                        stringResource(R.string.select_compiler_filter),
                         style = MaterialTheme.typography.titleLarge,
                         color = Color.White
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "为 ${app.name} 选择 ART 编译模式",
+                        stringResource(R.string.select_mode_for, app.name),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF90A4AE)
                     )
@@ -133,20 +134,20 @@ fun AppDetailScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
-                                            mode.label,
+                                            stringResource(mode.labelRes),
                                             style = MaterialTheme.typography.titleMedium,
                                             color = if (mode.isReset) Color(0xFFFF8A80) else Color.White
                                         )
                                         Spacer(Modifier.width(8.dp))
                                         Text(
-                                            "~${mode.estimatedSecondsPerApp}秒",
+                                            stringResource(R.string.per_app_seconds, mode.estimatedSecondsPerApp),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = Color(0xFF78909C)
                                         )
                                     }
                                     Spacer(Modifier.height(2.dp))
                                     Text(
-                                        mode.description,
+                                        stringResource(mode.descriptionRes),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFF90A4AE)
                                     )
@@ -166,7 +167,7 @@ fun AppDetailScreen(
                             shape = RoundedCornerShape(DexorDimensions.cornerSmall)
                         ) {
                             Text(
-                                "取消",
+                                stringResource(R.string.action_cancel),
                                 color = Color(0xFF90CAF9),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold
@@ -202,7 +203,7 @@ fun AppDetailScreen(
                             onClick = onBack,
                             modifier = Modifier.size(DexorDimensions.minTouchTarget)
                         ) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     }
                 },
@@ -239,12 +240,12 @@ fun AppDetailScreen(
                         ) {
                             Column {
                                 Text(
-                                    "已选模式",
+                                    stringResource(R.string.selected_filter),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color(0xFF90A4AE)
                                 )
                                 Text(
-                                    currentModeObj.label,
+                                    stringResource(currentModeObj.labelRes),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = if (currentModeObj.isReset) Color(0xFFFF8A80) else Color(0xFF90CAF9)
@@ -253,7 +254,7 @@ fun AppDetailScreen(
                             Spacer(Modifier.width(8.dp))
                             Icon(
                                 Icons.Default.ArrowDropDown,
-                                contentDescription = "更改模式",
+                                contentDescription = stringResource(R.string.change_filter),
                                 tint = Color(0xFF90CAF9)
                             )
                         }
@@ -286,7 +287,7 @@ fun AppDetailScreen(
                                 strokeWidth = 2.dp
                             )
                             Spacer(Modifier.width(DexorDimensions.spaceSmall))
-                            Text(if (currentModeObj.isReset) "正在清除..." else "正在优化...")
+                            Text(if (currentModeObj.isReset) stringResource(R.string.resetting) else stringResource(R.string.optimizing))
                         } else if (!isShizukuReady) {
                             Icon(
                                 Icons.Default.Info,
@@ -294,7 +295,7 @@ fun AppDetailScreen(
                                 modifier = Modifier.size(DexorDimensions.iconSizeSmall)
                             )
                             Spacer(Modifier.width(DexorDimensions.spaceExtraSmall))
-                            Text("授予权限")
+                            Text(stringResource(R.string.grant_permission))
                         } else {
                             Icon(
                                 if (currentModeObj.isReset) Icons.Default.Refresh else Icons.Default.PlayArrow,
@@ -302,7 +303,7 @@ fun AppDetailScreen(
                                 modifier = Modifier.size(DexorDimensions.iconSizeSmall)
                             )
                             Spacer(Modifier.width(DexorDimensions.spaceExtraSmall))
-                            Text(if (currentModeObj.isReset) "开始清除" else "开始优化")
+                            Text(if (currentModeObj.isReset) stringResource(R.string.reset_now) else stringResource(R.string.apply_mode))
                         }
                     }
                 }
@@ -389,7 +390,7 @@ fun AppDetailScreen(
                                 shape = RoundedCornerShape(DexorDimensions.cornerSmall)
                             ) {
                                 Text(
-                                    text = if (app.source == InstallSource.SYSTEM) "系统应用" else "用户应用",
+                                    text = if (app.source == InstallSource.SYSTEM) stringResource(R.string.system_app) else stringResource(R.string.user_app),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color.White,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -408,7 +409,7 @@ fun AppDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(DexorDimensions.spaceMedium)
                     ) {
                         MetricCard(
-                            label = "编译模式",
+                            label = stringResource(R.string.metric_dex_filter),
                             value = app.dexStatus,
                             color = when (app.dexStatus.lowercase()) {
                                 "speed" -> Color(0xFF2E7D32)
@@ -421,9 +422,10 @@ fun AppDetailScreen(
                             },
                             modifier = Modifier.weight(1f)
                         )
+                        val reasonRes = getDexReasonRes(app.dexReason)
                         MetricCard(
-                            label = "优化原因",
-                            value = getDexReasonDisplay(app.dexReason),
+                            label = stringResource(R.string.metric_reason),
+                            value = if (reasonRes != 0) stringResource(reasonRes) else app.dexReason,
                             color = Color(0xFF263238),
                             modifier = Modifier.weight(1f)
                         )
@@ -463,13 +465,13 @@ fun AppDetailScreen(
                         Spacer(Modifier.width(DexorDimensions.spaceMedium))
                         Column {
                             Text(
-                                "强制编译",
+                                stringResource(R.string.force_compile),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Color.White
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                "即使已有编译产物，也重新执行所选编译模式",
+                                stringResource(R.string.force_compile_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF90A4AE)
                             )
@@ -500,22 +502,22 @@ fun AppDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(DexorDimensions.spaceMedium)
                 ) {
                     Text(
-                        "安装包信息与文件路径",
+                        stringResource(R.string.package_info_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFF90CAF9)
                     )
 
-                    SpecRow("应用版本", "${app.versionName} (${app.versionCode})")
-                    SpecRow("目标 / 最低 SDK", "Android ${app.targetSdk} (API ${app.targetSdk}) / Min ${app.minSdk ?: "N/A"}")
-                    SpecRow("最后更新时间", formatDetailTime(app.lastUpdateTime))
+                    SpecRow(stringResource(R.string.spec_version), "${app.versionName} (${app.versionCode})")
+                    SpecRow(stringResource(R.string.spec_sdk), "Android ${app.targetSdk} (API ${app.targetSdk}) / Min ${app.minSdk ?: "N/A"}")
+                    SpecRow(stringResource(R.string.spec_last_updated), formatDetailTime(app.lastUpdateTime))
                     if (app.lastCompilationTime != null) {
-                        SpecRow("最后编译时间", formatDetailTime(app.lastCompilationTime))
+                        SpecRow(stringResource(R.string.spec_last_compiled), formatDetailTime(app.lastCompilationTime))
                     }
                     if (app.lastStatusChangeTime != null) {
-                        SpecRow("状态变更时间", formatDetailTime(app.lastStatusChangeTime))
+                        SpecRow(stringResource(R.string.spec_status_changed), formatDetailTime(app.lastStatusChangeTime))
                     }
-                    SpecRow("APK 文件路径", app.codePath ?: "未知", isMonospace = true)
-                    SpecRow("私有数据目录", app.dataDir ?: "未知", isMonospace = true)
+                    SpecRow(stringResource(R.string.spec_apk_path), app.codePath ?: stringResource(R.string.unknown), isMonospace = true)
+                    SpecRow(stringResource(R.string.spec_data_dir), app.dataDir ?: stringResource(R.string.unknown), isMonospace = true)
                 }
             }
         }

@@ -1,15 +1,20 @@
 package com.wrick.dexor.viewmodel
 
 import android.app.Application
+import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.wrick.dexor.R
 import com.wrick.dexor.db.AppDatabase
 import com.wrick.dexor.model.AppFilter
 import com.wrick.dexor.model.AppInfo
 import com.wrick.dexor.model.InstallSource
-import com.wrick.dexor.model.ShizukuState
+import com.wrick.dexor.model.PrivilegeState
 import com.wrick.dexor.model.SortMode
 import com.wrick.dexor.repository.AppRepository
+import com.wrick.dexor.shell.RootShell
+import com.wrick.dexor.shell.ShellRouter
 import com.wrick.dexor.shizuku.ShizukuHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,6 +30,22 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: AppRepository
+
+    /**
+     * 从本地化资源解析文案。
+     * Android 13 以下 Application 上下文不跟随 per-app locale,
+     * 因此按 AppCompatDelegate 请求的 locale 包装配置后再取字符串。
+     */
+    private fun str(resId: Int, vararg args: Any): String {
+        val app = getApplication<Application>()
+        val locales = AppCompatDelegate.getApplicationLocales()
+        val ctx = if (locales.isEmpty) app else {
+            val config = Configuration(app.resources.configuration)
+            config.setLocale(locales[0])
+            app.createConfigurationContext(config)
+        }
+        return ctx.getString(resId, *args)
+    }
 
     init {
         val dao = AppDatabase.getDatabase(application).appDao()
@@ -111,8 +132,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _shizukuState = MutableStateFlow(ShizukuState.NOT_RUNNING)
-    val shizukuState: StateFlow<ShizukuState> = _shizukuState.asStateFlow()
+    private val _privilegeState = MutableStateFlow(PrivilegeState.NO_CHANNEL)
+    val privilegeState: StateFlow<PrivilegeState> = _privilegeState.asStateFlow()
 
     private val _selectedApps = MutableStateFlow<Set<String>>(emptySet())
     val selectedApps: StateFlow<Set<String>> = _selectedApps.asStateFlow()
@@ -168,14 +189,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // --- Actions ---
 
-    fun refreshShizukuState() {
+    /**
+     * 刷新特权通道状态:Shizuku 在线且授权则直接就绪;
+     * 否则探测 Root(每进程至多一次自动探测,避免反复弹 Root 授权框)。
+     */
+    fun refreshPrivilegeState() {
         viewModelScope.launch(Dispatchers.IO) {
-            val state = when {
-                !ShizukuHelper.isShizukuAvailable() -> ShizukuState.NOT_RUNNING
-                !ShizukuHelper.hasPermission() -> ShizukuState.NO_PERMISSION
-                else -> ShizukuState.READY
+            val shizukuRunning = ShizukuHelper.isShizukuAvailable()
+            val shizukuGranted = shizukuRunning && ShizukuHelper.hasPermission()
+            if (shizukuGranted) {
+                _privilegeState.value = PrivilegeState.SHIZUKU_READY
+                return@launch
             }
-            _shizukuState.value = state
+            _privilegeState.value = PrivilegeState.ROOT_CHECKING
+            val rootOk = RootShell.probe()
+            _privilegeState.value = when {
+                rootOk -> PrivilegeState.ROOT_READY
+                shizukuRunning -> PrivilegeState.NEED_SHIZUKU_PERMISSION
+                else -> PrivilegeState.NO_CHANNEL
+            }
+        }
+    }
+
+    /** 手动触发 Root 通道探测(设置页按钮);未就绪时会重新执行 su 探测 */
+    fun probeRootChannel() {
+        viewModelScope.launch(Dispatchers.IO) {
+            RootShell.probe(force = true)
+            refreshPrivilegeState()
         }
     }
 
@@ -194,11 +234,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _isLoading.value = true
-            refreshShizukuState()
+            refreshPrivilegeState()
             try {
                 _allApps.value = repository.getInstalledApps()
             } catch (e: Exception) {
-                _snackMessage.value = "加载应用失败: ${e.message}"
+                _snackMessage.value = str(R.string.msg_load_failed, e.message ?: "")
             } finally {
                 _isLoading.value = false
             }
@@ -209,13 +249,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _isLoading.value = true
-            refreshShizukuState()
+            refreshPrivilegeState()
             try {
                 val apps = repository.getInstalledApps()
                 _allApps.value = apps
-                _snackMessage.value = "已刷新 ${apps.size} 个软件包"
+                _snackMessage.value = str(R.string.msg_refreshed, apps.size)
             } catch (e: Exception) {
-                _snackMessage.value = "刷新失败: ${e.message}"
+                _snackMessage.value = str(R.string.msg_refresh_failed, e.message ?: "")
             } finally {
                 _isLoading.value = false
             }
@@ -249,16 +289,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // --- Compilation ---
     fun compileApp(packageName: String, mode: String, force: Boolean = _forceCompile.value) {
-        if (!ShizukuHelper.isShizukuAvailable() || !ShizukuHelper.hasPermission()) {
-            _snackMessage.value = "需要 Shizuku 权限才能执行优化操作"
-            _showSettingsDialog.value = true
-            return
-        }
-
         viewModelScope.launch {
+            // 用户显式发起操作:Shizuku 不可用时允许触发一次 Root 授权探测
+            if (ShellRouter.best(forceRootProbe = true) == null) {
+                _snackMessage.value = str(R.string.msg_need_channel)
+                _showSettingsDialog.value = true
+                return@launch
+            }
             _isCompilingDetail.value = true
             val isReset = mode.equals("reset", ignoreCase = true)
-            _snackMessage.value = if (isReset) "正在重置 $packageName..." else "正在优化 $packageName ($mode)..."
+            _snackMessage.value = if (isReset) str(R.string.msg_resetting_pkg, packageName)
+            else str(R.string.msg_optimizing_pkg, packageName, mode)
             val result = repository.compileApp(packageName, mode, force)
 
             val target = _allApps.value.find { it.packageName == packageName }
@@ -272,24 +313,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             _snackMessage.value = result.fold(
                 onSuccess = {
-                    if (isReset) "$packageName 已清除并重置编译状态" else "$packageName 优化完成 ($mode)"
+                    if (isReset) str(R.string.msg_reset_done, packageName)
+                    else str(R.string.msg_optimize_done, packageName, mode)
                 },
-                onFailure = { "操作失败: ${it.message}" }
+                onFailure = { str(R.string.msg_operation_failed, it.message ?: "") }
             )
             _isCompilingDetail.value = false
         }
     }
 
     fun compileBatch(mode: String, force: Boolean = _forceCompile.value) {
-        if (!ShizukuHelper.isShizukuAvailable() || !ShizukuHelper.hasPermission()) {
-            _snackMessage.value = "需要 Shizuku 权限才能执行优化操作"
-            _showSettingsDialog.value = true
-            return
-        }
-
         viewModelScope.launch {
             val pkgs = _selectedApps.value.toList()
             if (pkgs.isEmpty()) return@launch
+            if (ShellRouter.best(forceRootProbe = true) == null) {
+                _snackMessage.value = str(R.string.msg_need_channel)
+                _showSettingsDialog.value = true
+                return@launch
+            }
             var ok = 0
             var fail = 0
 
@@ -302,7 +343,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _batchProgress.value = null
             _isSelectionMode.value = false
             _selectedApps.value = emptySet()
-            _snackMessage.value = "批量处理完成：$ok 个成功，$fail 个失败"
+            _snackMessage.value = str(R.string.msg_batch_done, ok, fail)
             _allApps.value = repository.getInstalledApps()
         }
     }

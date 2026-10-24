@@ -3,6 +3,7 @@ package com.wrick.dexor.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,31 +25,35 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
-import com.wrick.dexor.model.ShizukuState
+import androidx.core.os.LocaleListCompat
+import com.wrick.dexor.R
+import com.wrick.dexor.model.PrivilegeState
 import com.wrick.dexor.ui.theme.DexorDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    shizukuState: ShizukuState,
+    privilegeState: PrivilegeState,
     onRequestPermission: () -> Unit,
-    onRefreshShizuku: () -> Unit,
-    onBack: () -> Unit
+    onRefreshState: () -> Unit,
+    onBack: () -> Unit,
+    onProbeRoot: () -> Unit = {}
 ) {
     BackHandler(onBack = onBack)
 
     val context = LocalContext.current
 
     Scaffold(
-        topBar = {
+                topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "设置与关于",
+                        text = stringResource(R.string.settings_about),
                         style = MaterialTheme.typography.titleLarge,
                         color = Color.White
                     )
@@ -60,7 +65,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.action_back),
                             tint = Color.White
                         )
                     }
@@ -85,22 +90,28 @@ fun SettingsScreen(
             // 应用品牌展示卡片
             HeroAppCard(context = context)
 
-            // 第 1 节：Shizuku 提权服务
-            SettingsSection(title = "SHIZUKU 特权状态") {
+            // 第 1 节：特权通道状态
+            SettingsSection(title = stringResource(R.string.privilege_section)) {
                 ShizukuStatusCard(
-                    shizukuState = shizukuState,
+                    privilegeState = privilegeState,
                     onRequestPermission = onRequestPermission,
-                    onRefreshShizuku = onRefreshShizuku
+                    onRefreshShizuku = onRefreshState,
+                    onProbeRoot = onProbeRoot
                 )
             }
 
-            // 第 2 节：隐私与系统安全性
-            SettingsSection(title = "隐私与安全性") {
+            // 第 2 节：界面语言
+            SettingsSection(title = stringResource(R.string.language_section)) {
+                LanguageCard()
+            }
+
+            // 第 3 节：隐私与系统安全性
+            SettingsSection(title = stringResource(R.string.privacy_section)) {
                 PrivacySafetyCard()
             }
 
-            // 第 3 节：开源与致谢
-            SettingsSection(title = "关于与致谢") {
+            // 第 4 节：开源与致谢
+            SettingsSection(title = stringResource(R.string.about_section)) {
                 CreditsLegalCard(
                     onOpenProfile = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/DeveshTone"))
@@ -128,16 +139,18 @@ fun SettingsScreen(
 // 兼容别名
 @Composable
 fun SettingsDialog(
-    shizukuState: ShizukuState,
+    privilegeState: PrivilegeState,
     onRequestPermission: () -> Unit,
-    onRefreshShizuku: () -> Unit,
-    onDismiss: () -> Unit
+    onRefreshState: () -> Unit,
+    onDismiss: () -> Unit,
+    onProbeRoot: () -> Unit = {}
 ) {
     SettingsScreen(
-        shizukuState = shizukuState,
+        privilegeState = privilegeState,
         onRequestPermission = onRequestPermission,
-        onRefreshShizuku = onRefreshShizuku,
-        onBack = onDismiss
+        onRefreshState = onRefreshState,
+        onBack = onDismiss,
+        onProbeRoot = onProbeRoot
     )
 }
 
@@ -178,7 +191,7 @@ private fun HeroAppCard(context: android.content.Context) {
                         if (appIconBitmap != null) {
                             Image(
                                 bitmap = appIconBitmap,
-                                contentDescription = "Dexor 图标",
+                                contentDescription = stringResource(R.string.dexor_icon),
                                 modifier = Modifier.size(44.dp)
                             )
                         } else {
@@ -220,7 +233,7 @@ private fun HeroAppCard(context: android.content.Context) {
                     }
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = "统一 DEX2OAT 管理器",
+                        text = stringResource(R.string.app_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF90A4AE)
                     )
@@ -232,8 +245,8 @@ private fun HeroAppCard(context: android.content.Context) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                StatusPill(label = "100% 离线隐私", accent = Color(0xFF81C784))
-                StatusPill(label = "开源免费", accent = Color(0xFF90CAF9))
+                StatusPill(label = stringResource(R.string.badge_offline), accent = Color(0xFF81C784))
+                StatusPill(label = stringResource(R.string.badge_open_source), accent = Color(0xFF90CAF9))
             }
         }
     }
@@ -258,26 +271,37 @@ private fun StatusPill(label: String, accent: Color) {
 
 @Composable
 private fun ShizukuStatusCard(
-    shizukuState: ShizukuState,
+    privilegeState: PrivilegeState,
     onRequestPermission: () -> Unit,
-    onRefreshShizuku: () -> Unit
+    onRefreshShizuku: () -> Unit,
+    onProbeRoot: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val (statusColor, statusTitle, statusDesc) = when (shizukuState) {
-        ShizukuState.READY -> Triple(
+    val (statusColor, statusTitle, statusDesc) = when (privilegeState) {
+        PrivilegeState.SHIZUKU_READY -> Triple(
             Color(0xFF4CAF50),
-            "已授权并就绪",
-            "Dexor 已成功连接至 Shizuku，具有执行原生 ART 编译命令的提权能力。"
+            stringResource(R.string.status_shizuku_ready),
+            stringResource(R.string.status_shizuku_ready_desc)
         )
-        ShizukuState.NO_PERMISSION -> Triple(
+        PrivilegeState.ROOT_READY -> Triple(
+            Color(0xFF4CAF50),
+            stringResource(R.string.status_root_ready),
+            stringResource(R.string.status_root_ready_desc)
+        )
+        PrivilegeState.ROOT_CHECKING -> Triple(
+            Color(0xFF90CAF9),
+            stringResource(R.string.status_checking),
+            stringResource(R.string.status_checking_desc)
+        )
+        PrivilegeState.NEED_SHIZUKU_PERMISSION -> Triple(
             Color(0xFFFFA726),
-            "需要授权",
-            "Shizuku 服务正在运行，但尚未向 Dexor 授予权限。请点击下方按钮完成授权以开启 DEX 编译。"
+            stringResource(R.string.status_need_permission),
+            stringResource(R.string.status_need_permission_desc)
         )
-        ShizukuState.NOT_RUNNING -> Triple(
+        PrivilegeState.NO_CHANNEL -> Triple(
             Color(0xFFEF5350),
-            "服务未运行",
-            "Shizuku 服务未运行。请通过无线调试 (ADB) 或 Root 启动 Shizuku 以执行编译操作。"
+            stringResource(R.string.status_no_channel),
+            stringResource(R.string.status_no_channel_desc)
         )
     }
 
@@ -307,7 +331,7 @@ private fun ShizukuStatusCard(
                     )
                     Spacer(Modifier.width(DexorDimensions.spaceSmall))
                     Text(
-                        text = "Shizuku 服务",
+                        text = stringResource(R.string.privilege_channel),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
@@ -336,7 +360,7 @@ private fun ShizukuStatusCard(
                 lineHeight = 20.sp
             )
 
-            if (shizukuState == ShizukuState.NO_PERMISSION) {
+            if (privilegeState == PrivilegeState.NEED_SHIZUKU_PERMISSION) {
                 Button(
                     onClick = onRequestPermission,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
@@ -345,11 +369,11 @@ private fun ShizukuStatusCard(
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
                 ) {
-                    Text("授予 Shizuku 权限", fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(stringResource(R.string.grant_shizuku_permission), fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
 
                 Text(
-                    text = "需要帮助？查看官方设置指南",
+                    text = stringResource(R.string.need_help_guide),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF90CAF9),
                     modifier = Modifier
@@ -360,7 +384,18 @@ private fun ShizukuStatusCard(
                         }
                         .padding(vertical = 2.dp)
                 )
-            } else if (shizukuState == ShizukuState.NOT_RUNNING) {
+            } else if (privilegeState == PrivilegeState.NO_CHANNEL) {
+                Button(
+                    onClick = onProbeRoot,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                    shape = RoundedCornerShape(DexorDimensions.cornerSmall),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
+                ) {
+                    Text(stringResource(R.string.detect_root_channel), fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(DexorDimensions.spaceSmall)
@@ -378,7 +413,7 @@ private fun ShizukuStatusCard(
                             .defaultMinSize(minHeight = DexorDimensions.minTouchTarget),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF90CAF9))
                     ) {
-                        Text("设置指南", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.setup_guide), style = MaterialTheme.typography.labelMedium)
                     }
 
                     Button(
@@ -391,8 +426,22 @@ private fun ShizukuStatusCard(
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("刷新状态", style = MaterialTheme.typography.labelMedium, color = Color.White)
+                        Text(stringResource(R.string.recheck), style = MaterialTheme.typography.labelMedium, color = Color.White)
                     }
+                }
+            } else if (privilegeState == PrivilegeState.ROOT_CHECKING) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = Color(0xFF90CAF9),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(Modifier.width(DexorDimensions.spaceSmall))
+                    Text(
+                        stringResource(R.string.probing_root),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF90A4AE)
+                    )
                 }
             }
         }
@@ -422,7 +471,7 @@ private fun PrivacySafetyCard() {
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "100% 离线 & 隐私安全",
+                    text = stringResource(R.string.privacy_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White
@@ -430,7 +479,7 @@ private fun PrivacySafetyCard() {
             }
 
             Text(
-                text = "Dexor 不申请任何网络权限（Manifest 完全未声明 android.permission.INTERNET）。应用不包含任何埋点、统计、追踪分析或崩溃日志上报 SDK，所有操作与数据仅在本地执行与保留。",
+                text = stringResource(R.string.privacy_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF90A4AE),
                 lineHeight = 20.sp
@@ -439,14 +488,14 @@ private fun PrivacySafetyCard() {
             Divider(color = Color(0xFF1A2130), thickness = 0.8.dp)
 
             Text(
-                text = "系统安全性保障",
+                text = stringResource(R.string.system_safety_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White
             )
 
             Text(
-                text = "所有的编译操作均通过 Shizuku 调用 Android 原生包管理命令（cmd package compile）。Dexor 不会修改只读系统分区，不触碰任何系统安全配置，不影响设备官方完整性。",
+                text = stringResource(R.string.system_safety_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF90A4AE),
                 lineHeight = 20.sp
@@ -481,7 +530,7 @@ private fun CreditsLegalCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "开发者",
+                    text = stringResource(R.string.developer),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF90A4AE)
                 )
@@ -495,11 +544,11 @@ private fun CreditsLegalCard(
 
             Divider(color = Color(0xFF1A2130), thickness = 0.8.dp)
 
-            MinimalInfoRow(label = "开源协议", value = "MIT License")
+            MinimalInfoRow(label = stringResource(R.string.license), value = "MIT License")
             Divider(color = Color(0xFF1A2130), thickness = 0.8.dp)
 
             Text(
-                text = "第三方开源组件",
+                text = stringResource(R.string.third_party),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White
@@ -523,7 +572,7 @@ private fun CreditsLegalCard(
                         .defaultMinSize(minHeight = DexorDimensions.minTouchTarget),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF90CAF9))
                 ) {
-                    Text("项目主页", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.github_repo), style = MaterialTheme.typography.labelMedium)
                 }
 
                 OutlinedButton(
@@ -535,7 +584,78 @@ private fun CreditsLegalCard(
                         .defaultMinSize(minHeight = DexorDimensions.minTouchTarget),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF90CAF9))
                 ) {
-                    Text("版本发布", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.releases), style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 界面语言选择:跟随系统 / 简体中文 / English。
+ * 基于 AppCompatDelegate 的 per-app locale,选择立即生效并自动持久化;
+ * 系统语言为中文时默认显示中文,其余语言回退英文。
+ */
+@Composable
+private fun LanguageCard() {
+    val appLocales = AppCompatDelegate.getApplicationLocales()
+    val selectedTag = when {
+        appLocales.isEmpty -> "system"
+        appLocales.get(0)?.language == "zh" -> "zh"
+        else -> "en"
+    }
+
+    data class LangOption(val tag: String, val labelRes: Int)
+    val options = listOf(
+        LangOption("system", R.string.language_system),
+        LangOption("zh", R.string.language_zh),
+        LangOption("en", R.string.language_en)
+    )
+
+    Surface(
+        shape = RoundedCornerShape(DexorDimensions.cornerMedium),
+        color = Color(0xFF131720),
+        border = BorderStroke(1.dp, Color(0xFF1E2636)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(DexorDimensions.spaceDefault)) {
+            options.forEach { option ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
+                        .clip(RoundedCornerShape(DexorDimensions.cornerSmall))
+                        .clickable {
+                            AppCompatDelegate.setApplicationLocales(
+                                when (option.tag) {
+                                    "zh" -> LocaleListCompat.forLanguageTags("zh-CN")
+                                    "en" -> LocaleListCompat.forLanguageTags("en")
+                                    else -> LocaleListCompat.getEmptyLocaleList()
+                                }
+                            )
+                        }
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedTag == option.tag,
+                        onClick = {
+                            AppCompatDelegate.setApplicationLocales(
+                                when (option.tag) {
+                                    "zh" -> LocaleListCompat.forLanguageTags("zh-CN")
+                                    "en" -> LocaleListCompat.forLanguageTags("en")
+                                    else -> LocaleListCompat.getEmptyLocaleList()
+                                }
+                            )
+                        },
+                        colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF90CAF9))
+                    )
+                    Spacer(Modifier.width(DexorDimensions.spaceSmall))
+                    Text(
+                        text = stringResource(option.labelRes),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color(0xFFECEFF1)
+                    )
                 }
             }
         }
