@@ -44,6 +44,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    // 强制编译选项开关（默认为 true，与 -f 参数对应）
+    private val _forceCompile = MutableStateFlow(true)
+    val forceCompile: StateFlow<Boolean> = _forceCompile.asStateFlow()
+
+    fun setForceCompile(force: Boolean) {
+        _forceCompile.value = force
+    }
+
     /** Master filtered by search, sorted, and partitioned (computed on Dispatchers.Default) */
     private val _appLists = combine(
         _allApps, _sortMode, _searchQuery
@@ -61,12 +69,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             SortMode.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }
             SortMode.DEX_STATUS -> compareBy<AppInfo> {
                 when (it.dexStatus.lowercase()) {
-                    "speed", "speed-profile" -> 0
-                    "everything" -> 1
-                    "space" -> 2
-                    "verify" -> 3
-                    "run-from-apk", "interpret-only" -> 4
-                    else -> 5
+                    "speed" -> 0
+                    "speed-profile" -> 1
+                    "everything" -> 2
+                    "space" -> 3
+                    "verify" -> 4
+                    "run-from-apk", "interpret-only" -> 5
+                    else -> 6
                 }
             }.thenComparing(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
             SortMode.SOURCE -> compareBy<AppInfo> { it.source.ordinal }
@@ -189,7 +198,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 _allApps.value = repository.getInstalledApps()
             } catch (e: Exception) {
-                _snackMessage.value = "Error loading apps: ${e.message}"
+                _snackMessage.value = "加载应用失败: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -204,9 +213,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val apps = repository.getInstalledApps()
                 _allApps.value = apps
-                _snackMessage.value = "Refreshed ${apps.size} packages"
+                _snackMessage.value = "已刷新 ${apps.size} 个软件包"
             } catch (e: Exception) {
-                _snackMessage.value = "Refresh failed: ${e.message}"
+                _snackMessage.value = "刷新失败: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -239,17 +248,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun deselectAll() { _selectedApps.value = emptySet(); _isSelectionMode.value = false }
 
     // --- Compilation ---
-    fun compileApp(packageName: String, mode: String) {
+    fun compileApp(packageName: String, mode: String, force: Boolean = _forceCompile.value) {
         if (!ShizukuHelper.isShizukuAvailable() || !ShizukuHelper.hasPermission()) {
-            _snackMessage.value = "Shizuku permission required to apply mode"
+            _snackMessage.value = "需要 Shizuku 权限才能执行优化操作"
             _showSettingsDialog.value = true
             return
         }
 
         viewModelScope.launch {
             _isCompilingDetail.value = true
-            _snackMessage.value = "Optimizing $packageName ($mode)..."
-            val result = repository.compileApp(packageName, mode)
+            val isReset = mode.equals("reset", ignoreCase = true)
+            _snackMessage.value = if (isReset) "正在重置 $packageName..." else "正在优化 $packageName ($mode)..."
+            val result = repository.compileApp(packageName, mode, force)
 
             val target = _allApps.value.find { it.packageName == packageName }
             if (target != null) {
@@ -261,16 +271,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             _snackMessage.value = result.fold(
-                onSuccess = { "$packageName optimized ($mode)" },
-                onFailure = { "Failed: ${it.message}" }
+                onSuccess = {
+                    if (isReset) "$packageName 已清除并重置编译状态" else "$packageName 优化完成 ($mode)"
+                },
+                onFailure = { "操作失败: ${it.message}" }
             )
             _isCompilingDetail.value = false
         }
     }
 
-    fun compileBatch(mode: String) {
+    fun compileBatch(mode: String, force: Boolean = _forceCompile.value) {
         if (!ShizukuHelper.isShizukuAvailable() || !ShizukuHelper.hasPermission()) {
-            _snackMessage.value = "Shizuku permission required to apply mode"
+            _snackMessage.value = "需要 Shizuku 权限才能执行优化操作"
             _showSettingsDialog.value = true
             return
         }
@@ -283,16 +295,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             for ((i, pkg) in pkgs.withIndex()) {
                 _batchProgress.value = Triple(i + 1, pkgs.size, pkg)
-                val result = repository.compileApp(pkg, mode)
+                val result = repository.compileApp(pkg, mode, force)
                 if (result.isSuccess) ok++ else fail++
             }
 
             _batchProgress.value = null
             _isSelectionMode.value = false
             _selectedApps.value = emptySet()
-            _snackMessage.value = "Batch complete: $ok optimized, $fail failed"
+            _snackMessage.value = "批量处理完成：$ok 个成功，$fail 个失败"
             _allApps.value = repository.getInstalledApps()
         }
     }
 }
-

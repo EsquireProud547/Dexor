@@ -31,7 +31,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
@@ -63,15 +62,15 @@ fun MainScreen(
     val currentSort by viewModel.sortMode.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val snackMessage by viewModel.snackMessage.collectAsState()
+    val forceCompile by viewModel.forceCompile.collectAsState()
 
-    // Persistent scroll state and pager state for User and System tabs
+    // 两个 Tab 的持久化滚动状态与页面状态
     val userListState = rememberLazyListState()
     val sysListState = rememberLazyListState()
-    // Hoisted at MainScreen level so tab selection is NEVER lost when navigating to/from detail screen
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     var detailOriginPage by rememberSaveable { mutableIntStateOf(0) }
 
-    // Single app detail state
+    // 单个应用详情页状态
     val detailApp by viewModel.detailApp.collectAsState()
     val isCompilingDetail by viewModel.isCompilingDetail.collectAsState()
     val showSettingsDialog by viewModel.showSettingsDialog.collectAsState()
@@ -116,10 +115,11 @@ fun MainScreen(
             onToggleSortMenu = { showSortMenu = it },
             onOpenBatch = { showBatchSheet = true },
             showSettings = showSettingsDialog,
-            onCloseSettings = { viewModel.closeSettingsDialog() }
+            onCloseSettings = { viewModel.closeSettingsDialog() },
+            forceCompile = forceCompile,
+            onForceCompileChange = { viewModel.setForceCompile(it) }
         )
     } else {
-        // Cache the active detail app reference so the outgoing exit transition always renders AppDetailScreen
         var activeDetailApp by remember { mutableStateOf(detailApp) }
         LaunchedEffect(detailApp) {
             if (detailApp != null) {
@@ -164,8 +164,12 @@ fun MainScreen(
                             isShizukuReady = shizukuState == ShizukuState.READY,
                             onRequestPermission = { viewModel.requestShizukuPermission() },
                             onBack = { viewModel.closeAppDetail() },
-                            onCompile = { mode -> viewModel.compileApp(appToShow.packageName, mode) },
-                            showBackButton = true
+                            onCompile = { mode, force ->
+                                viewModel.compileApp(appToShow.packageName, mode, force)
+                            },
+                            showBackButton = true,
+                            initialForceCompile = forceCompile,
+                            onForceCompileChange = { viewModel.setForceCompile(it) }
                         )
                     }
                 }
@@ -196,20 +200,22 @@ fun MainScreen(
         }
     }
 
-    // --- Batch Modal Bottom Sheet ---
+    // 批量优化 Bottom Sheet 弹窗
     if (showBatchSheet) {
         CompilationBottomSheet(
             appName = null,
             batchCount = selectedApps.size,
+            forceCompile = forceCompile,
+            onForceCompileChange = { viewModel.setForceCompile(it) },
             onDismissRequest = { showBatchSheet = false },
             onCompileModeSelected = { mode ->
                 showBatchSheet = false
-                viewModel.compileBatch(mode)
+                viewModel.compileBatch(mode, forceCompile)
             }
         )
     }
 
-    // --- Batch progress dialog ---
+    // 批量优化进度对话框
     if (batchProgress != null) {
         val (current, total, pkg) = batchProgress!!
         val modeEst = COMPILE_MODES.firstOrNull()?.estimatedSecondsPerApp ?: 15
@@ -217,11 +223,11 @@ fun MainScreen(
 
         AlertDialog(
             onDismissRequest = { },
-            title = { Text("Batch Optimization in Progress", style = MaterialTheme.typography.titleLarge) },
+            title = { Text("正在批量优化", style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
                     Text(
-                        "$current of $total completed",
+                        "已完成 $current / $total",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White
                     )
@@ -235,7 +241,7 @@ fun MainScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Estimated remaining: ~${remaining}s",
+                        "预计剩余时间：约 $remaining 秒",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF78909C)
                     )
@@ -280,7 +286,6 @@ private fun SinglePaneList(
 
     val coroutineScope = rememberCoroutineScope()
 
-    // Precomputed sublists from ViewModel on Dispatchers.Default (zero in-composition filtering)
     val userList by viewModel.userApps.collectAsState()
     val sysList by viewModel.systemApps.collectAsState()
 
@@ -296,7 +301,7 @@ private fun SinglePaneList(
             TopAppBar(
                 title = {
                     if (isSelectionMode) {
-                        Text("${selectedApps.size} Selected", style = MaterialTheme.typography.titleLarge)
+                        Text("已选择 ${selectedApps.size} 项", style = MaterialTheme.typography.titleLarge)
                     } else {
                         Text(
                             "DEXOR",
@@ -315,7 +320,7 @@ private fun SinglePaneList(
                             onClick = { viewModel.deselectAll() },
                             modifier = Modifier.size(DexorDimensions.minTouchTarget)
                         ) {
-                            Icon(Icons.Default.Close, "Cancel")
+                            Icon(Icons.Default.Close, "取消选择")
                         }
                     }
                 },
@@ -325,10 +330,10 @@ private fun SinglePaneList(
                             onClick = onToggleSearch,
                             modifier = Modifier.size(DexorDimensions.minTouchTarget)
                         ) {
-                            Icon(Icons.Default.Search, "Search")
+                            Icon(Icons.Default.Search, "搜索应用")
                         }
 
-                        // Sort dropdown
+                        // 排序下拉菜单
                         Box {
                             IconButton(
                                 onClick = { onToggleSortMenu(true) },
@@ -336,7 +341,7 @@ private fun SinglePaneList(
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_sort),
-                                    contentDescription = "Sort Options",
+                                    contentDescription = "排序方式",
                                     tint = Color(0xFFECEFF1),
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -350,9 +355,9 @@ private fun SinglePaneList(
                                         text = {
                                             Text(
                                                 when (mode) {
-                                                    SortMode.NAME -> "Sort by Name"
-                                                    SortMode.DEX_STATUS -> "Sort by DEX Status"
-                                                    SortMode.SOURCE -> "Sort by Source"
+                                                    SortMode.NAME -> "按应用名称排序"
+                                                    SortMode.DEX_STATUS -> "按编译状态排序"
+                                                    SortMode.SOURCE -> "按安装来源排序"
                                                 },
                                                 color = if (currentSort == mode) Color(0xFF90CAF9) else Color.White,
                                                 fontWeight = if (currentSort == mode) FontWeight.Bold else FontWeight.Normal
@@ -367,15 +372,15 @@ private fun SinglePaneList(
                             }
                         }
 
-                        // Settings & App Info
+                        // 设置与关于
                         IconButton(
                             onClick = { viewModel.openSettingsDialog() },
                             modifier = Modifier.size(DexorDimensions.minTouchTarget)
                         ) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings & About")
+                            Icon(Icons.Default.Settings, contentDescription = "设置与关于")
                         }
 
-                        // Fast Scan Refresh with smooth rotating feedback
+                        // 快速扫描与刷新
                         IconButton(
                             onClick = { viewModel.refreshApps() },
                             enabled = !isLoading,
@@ -383,7 +388,7 @@ private fun SinglePaneList(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh",
+                                contentDescription = "刷新",
                                 modifier = Modifier.graphicsLayer {
                                     rotationZ = if (isLoading) refreshRotation else 0f
                                 },
@@ -398,7 +403,7 @@ private fun SinglePaneList(
                             },
                             modifier = Modifier.defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
                         ) {
-                            Text("All", color = Color(0xFF90CAF9), style = MaterialTheme.typography.labelLarge)
+                            Text("全选", color = Color(0xFF90CAF9), style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 },
@@ -426,7 +431,7 @@ private fun SinglePaneList(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
                         shape = RoundedCornerShape(DexorDimensions.cornerMedium)
                     ) {
-                        Text("Batch Optimize (${selectedApps.size} apps)", style = MaterialTheme.typography.titleMedium)
+                        Text("批量优化 (${selectedApps.size} 个应用)", style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
@@ -454,7 +459,7 @@ private fun SinglePaneList(
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Scroll to top",
+                        contentDescription = "回到顶部",
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -468,7 +473,7 @@ private fun SinglePaneList(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Material 3 Styled Shizuku Authorization Banner
+            // Shizuku 授权横幅
             ShizukuBanner(
                 state = shizukuState,
                 onGrant = { viewModel.requestShizukuPermission() },
@@ -483,7 +488,7 @@ private fun SinglePaneList(
                 )
             }
 
-            // Search Bar
+            // 搜索框
             AnimatedVisibility(visible = showSearch) {
                 OutlinedTextField(
                     value = searchQuery,
@@ -491,7 +496,7 @@ private fun SinglePaneList(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = DexorDimensions.spaceDefault, vertical = 6.dp),
-                    placeholder = { Text("Search by name or package...") },
+                    placeholder = { Text("搜索应用名称或包名...") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -504,14 +509,14 @@ private fun SinglePaneList(
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                Icon(Icons.Default.Close, "Clear", tint = Color.White)
+                                Icon(Icons.Default.Close, "清除搜索", tint = Color.White)
                             }
                         }
                     }
                 )
             }
 
-            // Material Design 3 Style Rounded & Coloured Header for User & System
+            // 用户应用 / 系统应用 分页导航指示器
             Surface(
                 color = Color(0xFF0F1115),
                 modifier = Modifier.fillMaxWidth()
@@ -523,8 +528,8 @@ private fun SinglePaneList(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     val tabItems = listOf(
-                        Pair("User Apps", userList.size),
-                        Pair("System Apps", sysList.size)
+                        Pair("用户应用", userList.size),
+                        Pair("系统应用", sysList.size)
                     )
 
                     tabItems.forEachIndexed { index, pair ->
@@ -576,7 +581,7 @@ private fun SinglePaneList(
                 }
             }
 
-            // Horizontally Swipable Pager with 2 tabs: User (0) & System (1)
+            // 左右滑动 Pager
             HorizontalPager(
                 state = pagerState,
                 beyondBoundsPageCount = 1,
@@ -590,12 +595,12 @@ private fun SinglePaneList(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = Color(0xFF90CAF9))
                             Spacer(Modifier.height(DexorDimensions.spaceMedium))
-                            Text("Loading packages...", color = Color(0xFF90A4AE), style = MaterialTheme.typography.bodyMedium)
+                            Text("正在加载软件包列表...", color = Color(0xFF90A4AE), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 } else if (listForPage.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No matching packages found", color = Color(0xFF78909C), style = MaterialTheme.typography.bodyLarge)
+                        Text("未找到匹配的软件包", color = Color(0xFF78909C), style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
                     LazyColumn(
@@ -660,7 +665,9 @@ private fun TwoPaneLayout(
     onToggleSortMenu: (Boolean) -> Unit,
     onOpenBatch: () -> Unit,
     showSettings: Boolean,
-    onCloseSettings: () -> Unit
+    onCloseSettings: () -> Unit,
+    forceCompile: Boolean,
+    onForceCompileChange: (Boolean) -> Unit
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
@@ -704,8 +711,12 @@ private fun TwoPaneLayout(
                     isShizukuReady = shizukuState == ShizukuState.READY,
                     onRequestPermission = { viewModel.requestShizukuPermission() },
                     onBack = { viewModel.closeAppDetail() },
-                    onCompile = { mode -> viewModel.compileApp(detailApp.packageName, mode) },
-                    showBackButton = false
+                    onCompile = { mode, force ->
+                        viewModel.compileApp(detailApp.packageName, mode, force)
+                    },
+                    showBackButton = false,
+                    initialForceCompile = forceCompile,
+                    onForceCompileChange = onForceCompileChange
                 )
             } else {
                 Surface(
@@ -714,7 +725,7 @@ private fun TwoPaneLayout(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            "Select an application to view DEX optimization details",
+                            "请选择左侧应用查看 DEX 编译详情",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF78909C)
                         )
@@ -737,7 +748,7 @@ fun ShizukuBanner(
         exit = fadeOut() + shrinkVertically()
     ) {
         when (state) {
-            ShizukuState.READY -> { /* clean minimal UI when ready */ }
+            ShizukuState.READY -> { }
             ShizukuState.NOT_RUNNING -> {
                 Surface(
                     color = Color(0xFF2D1214),
@@ -751,9 +762,9 @@ fun ShizukuBanner(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Shizuku Not Running", color = Color(0xFFFF8A80), style = MaterialTheme.typography.titleMedium)
+                            Text("Shizuku 未运行", color = Color(0xFFFF8A80), style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(2.dp))
-                            Text("Start Shizuku service, then tap Retry", color = Color(0xFFFFCDD2), style = MaterialTheme.typography.bodySmall)
+                            Text("请启动 Shizuku 服务后点击重试", color = Color(0xFFFFCDD2), style = MaterialTheme.typography.bodySmall)
                         }
                         Button(
                             onClick = onRetry,
@@ -761,7 +772,7 @@ fun ShizukuBanner(
                             shape = RoundedCornerShape(DexorDimensions.cornerSmall),
                             modifier = Modifier.defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
                         ) {
-                            Text("Retry", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                            Text("重试", color = Color.White, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
@@ -779,9 +790,9 @@ fun ShizukuBanner(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Shizuku Authorization Needed", color = Color(0xFFFFB74D), style = MaterialTheme.typography.titleMedium)
+                            Text("需要 Shizuku 授权", color = Color(0xFFFFB74D), style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(2.dp))
-                            Text("Tap Grant to enable dex2oat compiling & inspection", color = Color(0xFFFFE0B2), style = MaterialTheme.typography.bodySmall)
+                            Text("点击授权以启用 ART 编译与状态检测功能", color = Color(0xFFFFE0B2), style = MaterialTheme.typography.bodySmall)
                         }
                         Button(
                             onClick = onGrant,
@@ -789,7 +800,7 @@ fun ShizukuBanner(
                             shape = RoundedCornerShape(DexorDimensions.cornerSmall),
                             modifier = Modifier.defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
                         ) {
-                            Text("Grant", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                            Text("授权", color = Color.White, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
@@ -797,4 +808,3 @@ fun ShizukuBanner(
         }
     }
 }
-

@@ -1,6 +1,5 @@
 package com.wrick.dexor.ui
 
-import android.graphics.Bitmap
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,15 +14,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.wrick.dexor.R
 import com.wrick.dexor.model.AppInfo
 import com.wrick.dexor.model.InstallSource
+import com.wrick.dexor.model.getDexReasonDisplay
 import com.wrick.dexor.ui.theme.DexorCodeFont
 import com.wrick.dexor.ui.theme.DexorDimensions
 import com.wrick.dexor.ui.util.AppIconKey
@@ -71,7 +69,7 @@ fun AppListItem(
             )
         }
 
-        // Original Uncropped App Icon with soft rounded corners (LibChecker style via Coil)
+        // 原始无裁切应用图标
         AsyncImage(
             model = remember(app.packageName) { AppIconKey(app.packageName) },
             contentDescription = null,
@@ -84,7 +82,7 @@ fun AppListItem(
         Spacer(modifier = Modifier.width(DexorDimensions.spaceMedium))
 
         Column(modifier = Modifier.weight(1f)) {
-            // Row 1: App name
+            // 第 1 行：应用名称
             Text(
                 text = app.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -93,7 +91,7 @@ fun AppListItem(
                 overflow = TextOverflow.Ellipsis
             )
 
-            // Row 2: Package name with JetBrains Mono monospace font
+            // 第 2 行：包名（等宽字体）
             Text(
                 text = app.packageName,
                 style = MaterialTheme.typography.bodySmall.copy(fontFamily = DexorCodeFont),
@@ -104,13 +102,13 @@ fun AppListItem(
 
             Spacer(modifier = Modifier.height(DexorDimensions.spaceSmall))
 
-            // Row 3: Status badges with 48dp touch targets
+            // 第 3 行：状态与来源标签
             Row(
                 horizontalArrangement = Arrangement.spacedBy(DexorDimensions.spaceSmall),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatusChip(text = app.dexStatus, color = statusColor(app.dexStatus))
-                StatusChip(text = app.dexReason, color = Color(0xFF263238))
+                StatusChip(text = getDexReasonDisplay(app.dexReason), color = Color(0xFF263238))
                 if (app.source == InstallSource.GOOGLE_PLAY) {
                     Box(
                         modifier = Modifier
@@ -151,19 +149,20 @@ fun StatusChip(
 }
 
 private fun statusColor(status: String): Color = when (status.lowercase()) {
-    "speed", "speed-profile" -> Color(0xFF2E7D32)
+    "speed" -> Color(0xFF2E7D32)
+    "speed-profile" -> Color(0xFF388E3C)
     "everything" -> Color(0xFF1565C0)
-    "verify" -> Color(0xFFE65100)
     "space" -> Color(0xFFF57F17)
+    "verify" -> Color(0xFFE65100)
     "run-from-apk", "interpret-only" -> Color(0xFFC62828)
     "n/a" -> Color(0xFF616161)
     else -> Color(0xFF455A64)
 }
 
 private fun sourceLabel(s: InstallSource) = when (s) {
-    InstallSource.SYSTEM -> "SYS"
-    InstallSource.GOOGLE_PLAY -> "PLAY"
-    InstallSource.USER -> "USER"
+    InstallSource.SYSTEM -> "系统"
+    InstallSource.GOOGLE_PLAY -> "Play"
+    InstallSource.USER -> "用户"
 }
 
 private fun sourceColor(s: InstallSource) = when (s) {
@@ -171,4 +170,3 @@ private fun sourceColor(s: InstallSource) = when (s) {
     InstallSource.GOOGLE_PLAY -> Color(0xFF1B5E20)
     InstallSource.USER -> Color(0xFF0D47A1)
 }
-

@@ -225,24 +225,34 @@ class AppRepository(
     /**
      * Executes compiler mode via Shizuku shell broker.
      */
-    suspend fun compileApp(packageName: String, mode: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val result = DexManager.compilePackage(packageName, mode)
+    suspend fun compileApp(packageName: String, mode: String, force: Boolean = true): Result<Unit> = withContext(Dispatchers.IO) {
+        val result = DexManager.compilePackage(packageName, mode, force)
         if (result.isSuccess) {
             val now = System.currentTimeMillis()
             val state = DexManager.getDexoptState(packageName)
             val entity = appDao.getAppByPackageName(packageName)
+            val updatedStatus = if (mode.equals("reset", ignoreCase = true)) {
+                state?.status ?: "verify"
+            } else {
+                state?.status ?: mode
+            }
+            val updatedReason = if (mode.equals("reset", ignoreCase = true)) {
+                state?.reason ?: "reset"
+            } else {
+                state?.reason ?: "cmdline"
+            }
             if (entity != null) {
                 appDao.insertApp(
                     entity.copy(
-                        lastKnownDexStatus = state?.status ?: mode,
-                        lastKnownDexReason = state?.reason ?: "cmdline",
+                        lastKnownDexStatus = updatedStatus,
+                        lastKnownDexReason = updatedReason,
                         lastCompilationTimestamp = now
                     )
                 )
             }
             Result.success(Unit)
         } else {
-            Result.failure(result.exceptionOrNull() ?: Exception("Failed to optimize $packageName. Check Shizuku permissions."))
+            Result.failure(result.exceptionOrNull() ?: Exception("优化 $packageName 失败，请检查 Shizuku 权限。"))
         }
     }
 }

@@ -70,11 +70,16 @@ object DexManager {
 
     /**
      * Execute compilation via `cmd package compile -m <mode> -f <packageName>`.
-     * Supported modes: verify, space, speed, everything.
+     * Supported modes: speed-profile, speed, everything, space, verify, reset.
+     * For 'reset', runs `cmd package compile --reset <packageName>`.
      */
-    suspend fun compilePackage(packageName: String, mode: String): Result<String> {
-        val command = "cmd package compile -m $mode -f $packageName"
+    suspend fun compilePackage(packageName: String, mode: String, force: Boolean = true): Result<String> {
+        val command = if (mode.equals("reset", ignoreCase = true)) {
+            "cmd package compile --reset $packageName"
+        } else {
+            val forceFlag = if (force) " -f" else ""
+            "cmd package compile -m $mode$forceFlag $packageName"
+        }
         return ShizukuHelper.exec(command)
     }
 }
-

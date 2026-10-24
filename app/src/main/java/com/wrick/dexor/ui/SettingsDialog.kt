@@ -48,7 +48,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Settings & About",
+                        text = "设置与关于",
                         style = MaterialTheme.typography.titleLarge,
                         color = Color.White
                     )
@@ -60,7 +60,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = "返回",
                             tint = Color.White
                         )
                     }
@@ -82,11 +82,11 @@ fun SettingsScreen(
                 .padding(horizontal = DexorDimensions.spaceDefault, vertical = DexorDimensions.spaceDefault),
             verticalArrangement = Arrangement.spacedBy(DexorDimensions.spaceLarge)
         ) {
-            // HERO APP BRAND CARD
+            // 应用品牌展示卡片
             HeroAppCard(context = context)
 
-            // SECTION 1: Privilege & Service
-            SettingsSection(title = "SHIZUKU PRIVILEGE") {
+            // 第 1 节：Shizuku 提权服务
+            SettingsSection(title = "SHIZUKU 特权状态") {
                 ShizukuStatusCard(
                     shizukuState = shizukuState,
                     onRequestPermission = onRequestPermission,
@@ -94,13 +94,13 @@ fun SettingsScreen(
                 )
             }
 
-            // SECTION 2: Privacy & System Integrity
-            SettingsSection(title = "PRIVACY & SECURITY") {
+            // 第 2 节：隐私与系统安全性
+            SettingsSection(title = "隐私与安全性") {
                 PrivacySafetyCard()
             }
 
-            // SECTION 3: Open Source & Credits
-            SettingsSection(title = "ABOUT & CREDITS") {
+            // 第 3 节：开源与致谢
+            SettingsSection(title = "关于与致谢") {
                 CreditsLegalCard(
                     onOpenProfile = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/DeveshTone"))
@@ -125,7 +125,7 @@ fun SettingsScreen(
     }
 }
 
-// Alias for backwards compatibility
+// 兼容别名
 @Composable
 fun SettingsDialog(
     shizukuState: ShizukuState,
@@ -178,7 +178,7 @@ private fun HeroAppCard(context: android.content.Context) {
                         if (appIconBitmap != null) {
                             Image(
                                 bitmap = appIconBitmap,
-                                contentDescription = "Dexor Icon",
+                                contentDescription = "Dexor 图标",
                                 modifier = Modifier.size(44.dp)
                             )
                         } else {
@@ -220,20 +220,20 @@ private fun HeroAppCard(context: android.content.Context) {
                     }
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = "Unified DEX2OAT Manager",
+                        text = "统一 DEX2OAT 管理器",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF90A4AE)
                     )
                 }
             }
 
-            // Clean, essential badges
+            // 核心特性徽章
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                StatusPill(label = "100% Offline", accent = Color(0xFF81C784))
-                StatusPill(label = "Open Source", accent = Color(0xFF90CAF9))
+                StatusPill(label = "100% 离线隐私", accent = Color(0xFF81C784))
+                StatusPill(label = "开源免费", accent = Color(0xFF90CAF9))
             }
         }
     }
@@ -266,18 +266,18 @@ private fun ShizukuStatusCard(
     val (statusColor, statusTitle, statusDesc) = when (shizukuState) {
         ShizukuState.READY -> Triple(
             Color(0xFF4CAF50),
-            "Authorized & Ready",
-            "Dexor is connected to Shizuku with elevated shell execution privileges. Native compilation commands are ready."
+            "已授权并就绪",
+            "Dexor 已成功连接至 Shizuku，具有执行原生 ART 编译命令的提权能力。"
         )
         ShizukuState.NO_PERMISSION -> Triple(
             Color(0xFFFFA726),
-            "Permission Required",
-            "Shizuku service is active, but Dexor has not yet been granted permission. Grant permission to enable dexopt compilation."
+            "需要授权",
+            "Shizuku 服务正在运行，但尚未向 Dexor 授予权限。请点击下方按钮完成授权以开启 DEX 编译。"
         )
         ShizukuState.NOT_RUNNING -> Triple(
             Color(0xFFEF5350),
-            "Service Inactive",
-            "Shizuku service is not running. Start it via Wireless Debugging (ADB) or Root to enable compilation."
+            "服务未运行",
+            "Shizuku 服务未运行。请通过无线调试 (ADB) 或 Root 启动 Shizuku 以执行编译操作。"
         )
     }
 
@@ -307,7 +307,7 @@ private fun ShizukuStatusCard(
                     )
                     Spacer(Modifier.width(DexorDimensions.spaceSmall))
                     Text(
-                        text = "Shizuku Service",
+                        text = "Shizuku 服务",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
@@ -345,11 +345,11 @@ private fun ShizukuStatusCard(
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = DexorDimensions.minTouchTarget)
                 ) {
-                    Text("Grant Shizuku Permission", fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text("授予 Shizuku 权限", fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
 
                 Text(
-                    text = "Need help? View official setup guide",
+                    text = "需要帮助？查看官方设置指南",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF90CAF9),
                     modifier = Modifier
@@ -378,7 +378,7 @@ private fun ShizukuStatusCard(
                             .defaultMinSize(minHeight = DexorDimensions.minTouchTarget),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF90CAF9))
                     ) {
-                        Text("Setup Guide", style = MaterialTheme.typography.labelMedium)
+                        Text("设置指南", style = MaterialTheme.typography.labelMedium)
                     }
 
                     Button(
@@ -391,7 +391,7 @@ private fun ShizukuStatusCard(
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Recheck", style = MaterialTheme.typography.labelMedium, color = Color.White)
+                        Text("刷新状态", style = MaterialTheme.typography.labelMedium, color = Color.White)
                     }
                 }
             }
@@ -422,7 +422,7 @@ private fun PrivacySafetyCard() {
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "100% Offline & Private",
+                    text = "100% 离线 & 隐私安全",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White
@@ -430,7 +430,7 @@ private fun PrivacySafetyCard() {
             }
 
             Text(
-                text = "Dexor requests zero Internet permissions (android.permission.INTERNET is absent from the manifest). The application contains zero telemetry, analytics, tracking, or crash loggers. All operations remain entirely on your device.",
+                text = "Dexor 不申请任何网络权限（Manifest 完全未声明 android.permission.INTERNET）。应用不包含任何埋点、统计、追踪分析或崩溃日志上报 SDK，所有操作与数据仅在本地执行与保留。",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF90A4AE),
                 lineHeight = 20.sp
@@ -439,14 +439,14 @@ private fun PrivacySafetyCard() {
             Divider(color = Color(0xFF1A2130), thickness = 0.8.dp)
 
             Text(
-                text = "System Safety Assurance",
+                text = "系统安全性保障",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White
             )
 
             Text(
-                text = "All compilation operations execute standard Android platform commands ('cmd package compile') via Shizuku. Dexor does not alter read-only system partitions or modify device security configurations.",
+                text = "所有的编译操作均通过 Shizuku 调用 Android 原生包管理命令（cmd package compile）。Dexor 不会修改只读系统分区，不触碰任何系统安全配置，不影响设备官方完整性。",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF90A4AE),
                 lineHeight = 20.sp
@@ -473,7 +473,6 @@ private fun CreditsLegalCard(
                 .padding(DexorDimensions.spaceDefault),
             verticalArrangement = Arrangement.spacedBy(DexorDimensions.spaceMedium)
         ) {
-            // Developer with GitHub profile link
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -482,7 +481,7 @@ private fun CreditsLegalCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Developer",
+                    text = "开发者",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF90A4AE)
                 )
@@ -496,11 +495,11 @@ private fun CreditsLegalCard(
 
             Divider(color = Color(0xFF1A2130), thickness = 0.8.dp)
 
-            MinimalInfoRow(label = "License", value = "MIT License")
+            MinimalInfoRow(label = "开源协议", value = "MIT License")
             Divider(color = Color(0xFF1A2130), thickness = 0.8.dp)
 
             Text(
-                text = "Third-Party Libraries",
+                text = "第三方开源组件",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White
@@ -524,7 +523,7 @@ private fun CreditsLegalCard(
                         .defaultMinSize(minHeight = DexorDimensions.minTouchTarget),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF90CAF9))
                 ) {
-                    Text("GitHub Repo", style = MaterialTheme.typography.labelMedium)
+                    Text("项目主页", style = MaterialTheme.typography.labelMedium)
                 }
 
                 OutlinedButton(
@@ -536,7 +535,7 @@ private fun CreditsLegalCard(
                         .defaultMinSize(minHeight = DexorDimensions.minTouchTarget),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF90CAF9))
                 ) {
-                    Text("Releases", style = MaterialTheme.typography.labelMedium)
+                    Text("版本发布", style = MaterialTheme.typography.labelMedium)
                 }
             }
         }

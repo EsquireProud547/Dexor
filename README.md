@@ -59,10 +59,12 @@ Dexor exposes Android's native compilation filters so you can balance runtime ex
 
 | Mode | Filter Flag | How It Works | Storage Impact | Best Used For |
 | :--- | :--- | :--- | :---: | :--- |
+| **Speed Profile** | `speed-profile` | Compiles hot code based on available runtime execution profiles. Falls back to verify without profiles. | Medium | Balanced daily performance tailored to actual app usage. |
 | **Speed** | `speed` | Force-compiles all accessible bytecode methods into native machine code. Eliminates JIT compilation stutters. | High | Games, daily drivers, and performance-sensitive apps. |
 | **Space** | `space` | Compiles core application initialization and entry points only. | Low–Medium | General apps where saving disk space is prioritized over peak velocity. |
 | **Verify** | `verify` | Validates DEX bytecode structure without generating native machine code. Reverts the app to the raw JIT interpreter. | Minimum | Reclaiming maximum storage space from rarely used apps. |
 | **Everything** | `everything` | Exhaustively compiles every method and resolves all class references unconditionally. | Maximum | Complete native execution across entire APK codebase. |
+| **Reset / Clear** | `--reset` | Clears all compiled artifacts and resets execution profiles back to original install state. | Zero | Resetting problematic compilation states and recovering all disk space. |
 
 ---
 
